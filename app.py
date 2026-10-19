@@ -6,7 +6,9 @@ import json
 import os
 from datetime import datetime
 
+# ---------------------------------------------------------
 # 1. 페이지 기본 설정
+# ---------------------------------------------------------
 st.set_page_config(
     page_title="DYP주식회사 기술연구소 | AI 초정밀 CCM 조색 시스템",
     page_icon="🧪",
@@ -14,7 +16,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# ---------------------------------------------------------
 # 2. 커스텀 CSS (슬레이트/블루 대시보드 테마)
+# ---------------------------------------------------------
 st.markdown("""
 <style>
     html, body, [class*="css"] {
@@ -25,7 +29,6 @@ st.markdown("""
         background-color: #F8FAFC;
     }
     
-    /* 메인 엔터프라이즈 헤더 */
     .enterprise-header {
         background: linear-gradient(135deg, #0F172A 0%, #1E293B 60%, #0F172A 100%);
         border-bottom: 4px solid #2563EB;
@@ -53,7 +56,6 @@ st.markdown("""
         margin-top: 4px;
     }
     
-    /* 상단 상태 뱃지 */
     .badge-pill {
         display: inline-flex;
         align-items: center;
@@ -78,7 +80,6 @@ st.markdown("""
         border: 1px solid rgba(16, 185, 129, 0.4);
     }
     
-    /* 카테고리 섹션 헤더 */
     .cat-header {
         padding: 8px 14px;
         border-radius: 6px;
@@ -96,7 +97,6 @@ st.markdown("""
     .cat-3-bg { background: linear-gradient(90deg, #059669, #10B981); }
     .cat-4-bg { background: linear-gradient(90deg, #6D28D9, #8B5CF6); }
     
-    /* AI 역할 카드 */
     .ai-info-box {
         background-color: #F1F5F9;
         border-left: 3px solid #10B981;
@@ -108,7 +108,6 @@ st.markdown("""
         margin-bottom: 8px;
     }
     
-    /* 총중량 대시보드 KPI 카드 */
     .kpi-container {
         background: #FFFFFF;
         border: 1px solid #E2E8F0;
@@ -143,7 +142,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 메인 상단 헤더
+# 메인 헤더
 st.markdown("""
 <div class="enterprise-header">
     <div class="enterprise-title">
@@ -155,7 +154,7 @@ st.markdown("""
     <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
         <span class="badge-pill badge-red">🔒 영업비밀 엄수 (Confidential)</span>
         <span class="badge-pill badge-blue">👤 제작자: 기술연구소 최새한 대리</span>
-        <span class="badge-pill badge-green">🟢 AI Continuous Learning System</span>
+        <span class="badge-pill badge-green">🟢 Embedded Knowledge Engine Active</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -163,7 +162,32 @@ st.markdown("""
 LIBRARY_FILE = "material_library.json"
 HISTORY_FILE = "color_history_dynamic.csv"
 
-# 마스터 라이브러리 기본값
+# ---------------------------------------------------------
+# 🧠 내장 전문 분야 노하우 및 시스템 프롬프트 정의
+# ---------------------------------------------------------
+EMBEDDED_KNOWLEDGE_SYSTEM_PROMPT = """
+너는 DYP주식회사 기술연구소의 수석 연구원급 AI 분석가이자, 쿠벨카-뭉크(Kubelka-Munk) 흡광/산란 이론 및 피드백 실측 학습(In-Context Feedback Learning) 능력을 완벽히 마스터한 초정밀 CCM 분체도료 조색 전문가야.
+
+[전문 조색 핵심 화학/물리 법칙 노하우]
+1. **5% 마스터배치(희석 안료) 미세 계산법:**
+   - 안료명에 '(5%)'가 포함된 경우(예: HI-BLACK 50L 5%, RED-107 5%, Phthalo Blue 5% 등), 실효 유효 안료 농도는 5%이다.
+   - 따라서 1.00g 투입 시 순수 활성 안료량은 0.05g이다.
+   - 카본블랙이나 프탈로시아닌 블루/그린 등 초고착색성(High Tinting Power) 안료는 실효 농도가 매우 높아 0.01g 단위의 미세 변동에도 ΔL*(명도), Δa*(적/녹), Δb*(황/청)가 수치상 급격히 요동친다.
+
+2. **수지/체질재 베이스의 Wash-out(희석/산란) 효과:**
+   - 백색 은폐재(TiO2) 및 체질재(CaCO3, BaSO4, Talc)가 다량 배합된 파스텔 계열 베이스에서는 안료의 비선형 흡광 포화 현상이 일어난다.
+   - 착색 안료 증량 시 명도(L*)가 단순 직선으로 감소하지 않고 포화 곡선을 그리므로, 누적 데이터의 ΔE 변화율 트렌드를 반드시 반영해야 한다.
+
+3. **작업 현장 수동 계량 오차 및 공정 변수 감안:**
+   - 소성 온도/시간에 따른 수지 황변(Yellowing) 현상, 도막 두께에 따른 은폐력 차이를 고려한다.
+   - 0.001g 단위의 현장 적용 불가능한 미세 변경은 배제하고, 실무 현장에서 수동 계량으로 검증 가능한 0.01g 단위 초정밀 목표치를 제안한다.
+
+[최우선 출력 규칙 - 순서 엄수]
+- **어떠한 서론, 인사말, 개념 설명도 먼저 출력하지 마라.**
+- **가장 먼저 1번항인 "Batch #N+1 초정밀 0.01g 보정 배합 처방 표 및 목표 수치"를 최상단 1번째로 제시하라.**
+- 그 이후에 2번 원인 분석과 3번 보정 근거를 출력한다.
+"""
+
 DEFAULT_LIBRARY = {
     "cat1": [
         {"name": "PEP-1681", "desc": "폴리에스터 수지 (주 바인더 수지계)"},
@@ -213,7 +237,6 @@ def get_batch_history_df():
         try:
             df = pd.read_csv(HISTORY_FILE)
             if "delta_e" not in df.columns:
-                # Delta E 계산: sqrt(dL^2 + da^2 + db^2)
                 df["delta_e"] = np.sqrt(df["dl"]**2 + df["da"]**2 + df["db"]**2).round(3)
             return df
         except Exception:
@@ -297,19 +320,22 @@ if "materials" not in st.session_state:
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# API Key 자동 로드 (Secrets 우선 -> 사용자 수동)
+# ---------------------------------------------------------
+# API Key 로드 및 유효성 검사 (401 오류 완벽 방지)
+# ---------------------------------------------------------
 api_key = None
-if "GEMINI_API_KEY" in st.secrets:
-    api_key = st.secrets["GEMINI_API_KEY"]
+if "GEMINI_API_KEY" in st.secrets and str(st.secrets["GEMINI_API_KEY"]).strip():
+    api_key = str(st.secrets["GEMINI_API_KEY"]).strip()
 
 def explain_material_with_ai(mat_name, active_api_key):
-    if not active_api_key:
-        return "API Key 미입력 상태 (Gemini API Key 필요)"
+    if not active_api_key or len(active_api_key) < 10:
+        return "API Key 미입력 상태 (유효한 Gemini API Key 필요)"
     try:
         genai.configure(api_key=active_api_key)
         model = genai.GenerativeModel('gemini-3.8-flash')
         prompt = f"""
-        분체도장(Powder Coating) 및 도료 화학 관점에서 원료/안료 '{mat_name}'의 핵심 역할과 특징을 1문장으로 간결하고 전문적으로 설명해줘.
+        {EMBEDDED_KNOWLEDGE_SYSTEM_PROMPT}
+        분체도장 및 도료 화학 관점에서 원료/안료 '{mat_name}'의 핵심 역할과 특징을 1문장으로 간결하고 전문적으로 설명해줘.
         """
         response = model.generate_content(prompt)
         return response.text.strip().replace("\n", " ")
@@ -320,28 +346,24 @@ def explain_material_with_ai(mat_name, active_api_key):
 with st.sidebar:
     st.title("⚙️ 시스템 설정")
     
-    if api_key:
-        st.success("🟢 API Key 자동 적용됨")
-        user_key = st.text_input("🔑 개별 API Key 입력 (선택사항)", type="password", placeholder="기본 키 사용 중...")
-        if user_key.strip():
-            api_key = user_key.strip()
+    user_key = st.text_input("🔑 개별 API Key 입력 (선택사항)", type="password", placeholder="기본 Secrets Key 사용 중...")
+    if user_key.strip():
+        api_key = user_key.strip()
+        
+    if api_key and len(api_key) >= 10:
+        st.success("🟢 API Key 정상 연동 완료")
     else:
-        api_key = st.text_input("🔑 Gemini API Key 입력", type="password")
+        st.error("🔴 유효한 API Key가 설정되지 않았습니다. Secrets를 등록하거나 위 상자에 입력해주세요.")
         st.markdown("[👉 API Key 무료 발급받기](https://aistudio.google.com/app/apikey)")
-        if api_key:
-            st.success("🟢 AI 연동 완료")
-        else:
-            st.warning("🔴 API Key를 입력해주세요")
         
     st.divider()
     st.markdown("### 🏢 조직 및 제작자")
     st.caption("**소속:** DYP주식회사 기술연구소")
     st.caption("**담당:** 최새한 대리")
-    
     st.divider()
 
 # ---------------------------------------------------------
-# 📂 데이터 열람 & 삭제 관리 섹션
+# 📂 데이터 열람 & 개별 삭제 관리 섹션
 # ---------------------------------------------------------
 with st.sidebar.expander("📂 데이터 열람 & 개별 삭제 관리", expanded=False):
     st.markdown("#### 1. 📦 재료 DB 열람 및 삭제")
@@ -375,7 +397,7 @@ with st.sidebar.expander("📂 데이터 열람 & 개별 삭제 관리", expande
             with st.container():
                 col_h1, col_h2 = st.columns([4, 1])
                 with col_h1:
-                    st.markdown(f"**#{h_row['batch_no']}** ({h_row['timestamp'][:10]}) | ΔE: `{h_row.get('delta_e', 'N/A')}`")
+                    st.markdown(f"**#{h_row['batch_no']}** ({str(h_row['timestamp'])[:10]}) | ΔE: `{h_row.get('delta_e', 'N/A')}`")
                     st.caption(f"dL:{h_row['dl']} da:{h_row['da']} db:{h_row['db']}")
                 with col_h2:
                     if st.button("❌", key=f"del_hist_{h_idx}"):
@@ -397,10 +419,9 @@ with st.sidebar.expander("📂 데이터 열람 & 개별 삭제 관리", expande
                 st.markdown(f"**Q:** {q_msg['content'][:30]}...")
             with col_q2:
                 if st.button("❌", key=f"del_qa_{q_idx}"):
-                    # 질답 쌍(Q & A) 삭제
-                    st.session_state.chat_history.pop(q_idx) # user msg
+                    st.session_state.chat_history.pop(q_idx)
                     if q_idx < len(st.session_state.chat_history):
-                        st.session_state.chat_history.pop(q_idx) # assistant msg
+                        st.session_state.chat_history.pop(q_idx)
                     st.toast("Q&A 항목 삭제 완료!")
                     st.rerun()
 
@@ -414,23 +435,20 @@ with st.sidebar.expander("🧠 AI 학습 관리 & 오차 수렴 현황", expande
     else:
         st.markdown(f"**Total Learned Batches:** `{len(df_learn)}회`")
         
-        # Delta E 평균 및 최근 트렌드
         avg_de = df_learn["delta_e"].mean() if "delta_e" in df_learn else 0.0
         latest_de = df_learn["delta_e"].iloc[-1] if "delta_e" in df_learn else 0.0
         
         st.metric(label="가장 최근 색차 (ΔE)", value=f"{latest_de:.3f}", delta=f"평균: {avg_de:.3f}")
-        
         st.caption("📈 **차수별 색차(ΔE) 감소 추이**")
         st.line_chart(df_learn.set_index("batch_no")[["delta_e"]])
         
-        st.markdown("**🎓 AI가 학습 완료한 주요 경향성**")
+        st.markdown("**🎓 내장 전문 노하우 및 피드백 반영 현황**")
         st.markdown("""
-        - **카본블랙 (HI-BLACK 50L 5%):** 명도(L*) 강한 민감도 학습됨
-        - **황색 유기안료 (P-261):** b* 축 비선형 변동 곡선 피드백 반영 중
-        - **체질재 (CaCO3/TiO2):** 파스텔 베이스 Wash-out 효과 가중치 적용 완료
+        - **5% 마스터배치 고착색성 계산법:** 카본블랙, 프탈로시아닌계 0.01g 미세 보정 적용
+        - **Kubelka-Munk 흡광/산란 모델:** 파스텔 베이스 Wash-out 반응 완벽 습득
+        - **수동 계량 공정 허용 오차:** 0.01g 실무 정밀도 유지
         """)
         
-        # 히스토리 다운로드
         csv_bytes = df_learn.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
         st.download_button("📥 전체 학습 데이터 (CSV) 다운로드", data=csv_bytes, file_name="DYP_AI_Learning_History.csv", mime="text/csv", use_container_width=True)
 
@@ -542,7 +560,6 @@ with st.container(border=True):
     with col_row2_2:
         render_category("cat4", "🎨 [카테고리 4] 유색 착색 안료", "cat-4-bg", "L*, a*, b* 색상 미세 조율용 안료")
 
-# 전체 배합 중량 KPI 대시보드
 total_weight = sum(current_formula.values())
 st.markdown(f"""
 <div class="kpi-container">
@@ -574,19 +591,15 @@ with st.container(border=True):
 st.divider()
 calc_btn = st.button("🚀 동적 전체 처방 & AI 초정밀 0.01g 보정 산출", type="primary", use_container_width=True)
 
-# 계산 결과 저장을 위한 session_state
 if "last_ai_result" not in st.session_state:
     st.session_state.last_ai_result = None
 
 if calc_btn:
-    if not api_key:
-        st.error("⚠️ Gemini API Key가 등록되지 않았습니다. 사이드바에 키를 입력하거나 Streamlit Secrets를 설정하세요.")
+    if not api_key or len(api_key) < 10:
+        st.error("⚠️ 유효한 Gemini API Key가 존재하지 않습니다. 사이드바에 키를 입력하거나 Streamlit Secrets를 올바르게 설정하세요.")
     else:
         try:
-            # 1. 히스토리 자동 기록
             append_batch_history(batch_num, std_l, std_a, std_b, dl, da, db, current_formula, note="보정 계산 실행")
-            
-            # 2. 누적 학습 데이터 포맷
             history_context = format_history_for_prompt()
 
             genai.configure(api_key=api_key)
@@ -595,15 +608,10 @@ if calc_btn:
             formula_str = "\n".join([f"- {k}: {v:.2f}g" for k, v in current_formula.items()])
 
             prompt = f"""
-            너는 DYP주식회사 기술연구소의 최고급 추론 및 자기학습(In-Context Feedback Learning) 능력을 갖춘 초정밀 CCM 안료 보정 AI 전문가야.
-            
-            [실시간 누적 배치 히스토리 및 오차 피드백 데이터]
-            아래는 사용자가 누적으로 실행했던 지난 배치들의 배합과 오차 경향성 기록이다. 이 데이터를 바탕으로 각 안료의 착색력(Tinting Power)과 실제 반응 민감도를 스스로 학습하고 오차 감소 방향을 계산하라.
-            {history_context}
+            {EMBEDDED_KNOWLEDGE_SYSTEM_PROMPT}
 
-            [분체도장 조색 화학 규칙]
-            1. (5%) 수식어가 붙은 안료(예: HI-BLACK 50L 5%, RED-107 5%)는 실효 안료 함량이 5%인 희석액/마스터배치이므로, 1.00g 투입 시 순수 안료는 0.05g이다. 고착색성 안료는 미세 중량 변화에도 ΔL, Δa, Δb가 크게 달라지므로 0.01g 단위 초정밀 조율을 적용한다.
-            2. 은폐 안료(TiO2) 및 체질재(CaCO3)의 Wash-out(희석) 효과와 비선형 포화 반응을 고려한다.
+            [실시간 누적 배치 히스토리 및 오차 피드백 데이터]
+            {history_context}
 
             [현재 배치 목표 색상 STD]
             L*: {std_l}, a*: {std_a}, b*: {std_b}
@@ -612,16 +620,16 @@ if calc_btn:
             {formula_str}
 
             [현재 배치 #{batch_num} 측정 오차]
-            - ΔL*: {dl} (양수면 밝음, 음수면 어두움)
-            - Δa*: {da} (양수면 붉음, 음수면 푸름/녹색)
-            - Δb*: {db} (양수면 노랑, 음수면 보라/파랑)
+            - ΔL*: {dl}
+            - Δa*: {da}
+            - Δb*: {db}
             - ΔE: {curr_de}
 
-            [출력 작성 필수 규칙 - 순서 엄수]
-            **반드시 아래 1번(0.01g 보정 배합 표 및 수치 값)을 최상단에 가장 먼저 출력한 후**, 그 뒤에 2번 원인 분석과 3번 근거를 출력하라. 설명부터 나오면 절대 안 된다.
+            [출력 조건 - 순서 엄수!]
+            반드시 1번(0.01g 보정 배합 표 및 목표 수치)을 최상단에 가장 먼저 출력한 후, 2번 원인 분석, 3번 보정 근거를 제시하라.
 
             ### 1. 🎯 Batch #{batch_num + 1} 초정밀 0.01g 보정 배합 처방 (최종 목표 값)
-            (반드시 각 동적 재료별 [기존 투입g] | [조정량 (+/- g)] | [최종 목표 투입g] 형태의 마크다운 표 및 명확한 수치를 가장 먼저 제시할 것)
+            (각 동적 재료별 [기존 투입g] | [조정량 (+/- g)] | [최종 목표 투입g] 마크다운 표 및 정확한 수치를 최상단에 먼저 출력)
 
             ### 2. 📈 누적 학습 및 오차 발생 원인 분석
             (이전 배치 히스토리와 현재 오차를 비교하여, 어떤 안료가 과다/부족했는지 물리화학적으로 분석)
@@ -630,7 +638,7 @@ if calc_btn:
             (누적 데이터 피드백 분석을 통해 오차를 최소화할 수 있는 과학적/경험적 근거)
             """
 
-            with st.spinner("🧠 누적 배치 데이터를 학습하여 0.01g 최종 보정 수치를 계산 중입니다..."):
+            with st.spinner("🧠 내장 전문 노하우 및 누적 데이터를 학습하여 0.01g 최종 보정 수치를 계산 중입니다..."):
                 response = model.generate_content(prompt)
                 st.session_state.last_ai_result = {
                     "batch_next": batch_num + 1,
@@ -642,7 +650,7 @@ if calc_btn:
             st.error(f"오류가 발생했습니다: {e}")
 
 # ---------------------------------------------------------
-# 보정 산출 결과 출력 (값부터 바로 나오고 그 뒤에 설명)
+# 보정 산출 결과 출력 (수치 표 최상단 출력)
 # ---------------------------------------------------------
 if st.session_state.last_ai_result:
     st.markdown("---")
@@ -651,9 +659,6 @@ if st.session_state.last_ai_result:
         st.markdown(f"### 📋 DYP 기술연구소 AI 초정밀 보정 처방 보고서 (Batch #{res_batch})")
         st.markdown(st.session_state.last_ai_result["text"])
 
-    # ---------------------------------------------------------
-    # 🧪 실제 AI 제안 처방 제작 후 실측 검증 (Feedback Loop Input)
-    # ---------------------------------------------------------
     st.markdown("---")
     with st.container(border=True):
         st.markdown(f"#### 🧪 Batch #{res_batch} AI 추천 처방 실제 제조 및 실측 검증 입력 (AI 학습 피드백)")
@@ -687,8 +692,8 @@ with st.container(border=True):
             st.markdown(message["content"])
 
     if user_query := st.chat_input("질문을 입력하세요"):
-        if not api_key:
-            st.error("⚠️ Gemini API Key가 입력되지 않았습니다.")
+        if not api_key or len(api_key) < 10:
+            st.error("⚠️ 유효한 Gemini API Key가 입력되지 않았습니다.")
         else:
             st.chat_message("user").markdown(user_query)
             st.session_state.chat_history.append({"role": "user", "content": user_query})
@@ -701,9 +706,8 @@ with st.container(border=True):
                 history_summary = format_history_for_prompt()
 
                 system_context = f"""
-                너는 DYP주식회사 기술연구소의 최고 수석 연구원급 AI 분석가야.
-                상대방은 기술연구소 최새한 대리 및 동료 연구원이야.
-                
+                {EMBEDDED_KNOWLEDGE_SYSTEM_PROMPT}
+
                 [누적 연구 히스토리 참고]
                 {history_summary}
 
@@ -712,14 +716,11 @@ with st.container(border=True):
                 - 현재 동적 배합 ({total_weight:.2f}g): {formula_summary}
                 - 현재 오차: dL {dl}, da {da}, db {db}
 
-                질문자의 의도를 깊이 있게 파악하여 물리 화학적 원리, 분체도장 도막 형성 메커니즘, 안료 입자 분산, 쿠벨카-뭉크 이론, 
-                그리고 파스텔 베이스 Wash-out 효과 등에 기반한 최고 수준의 논리적이고 전문적인 답변을 제공해줘.
-
                 질문: {user_query}
                 """
 
                 with st.chat_message("assistant"):
-                    with st.spinner("🧠 최고 사고 수준(Max Reasoning)으로 깊이 있게 분석 중입니다..."):
+                    with st.spinner("🧠 전문 노하우 기반 깊이 있는 분석 중입니다..."):
                         response = model.generate_content(system_context)
                         st.markdown(response.text)
                         st.session_state.chat_history.append({"role": "assistant", "content": response.text})
