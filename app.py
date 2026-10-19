@@ -141,7 +141,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 메인 상단 헤더 (로고 완전 제거)
+# 메인 상단 헤더
 st.markdown("""
 <div class="enterprise-header">
     <div class="enterprise-title">
@@ -241,7 +241,7 @@ def explain_material_with_ai(mat_name, api_key):
         return "API Key 미입력 상태 (Gemini API Key 필요)"
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-pro')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         prompt = f"""
         분체도장(Powder Coating) 및 도료 화학 관점에서 원료/안료 '{mat_name}'의 핵심 역할과 특징을 1문장으로 간결하고 전문적으로 설명해줘.
         """
@@ -250,7 +250,7 @@ def explain_material_with_ai(mat_name, api_key):
     except Exception as e:
         return f"AI 분석 실패: {e}"
 
-# 사이드바 설정 (로고 제거)
+# 사이드바 설정
 with st.sidebar:
     st.title("⚙️ 시스템 설정")
     api_key = st.text_input("🔑 Gemini API Key", type="password")
@@ -325,7 +325,6 @@ def render_category(cat_key, cat_title, cat_css_class, cat_desc):
             st.session_state.materials[cat_key].pop(i)
         st.rerun()
 
-    # 2-Way 재료 추가 영역 (Expander)
     cat_short = cat_title.split(']')[1] if ']' in cat_title else cat_title
     with st.expander(f"➕ {cat_short} 재료 추가", expanded=False):
         st.markdown("**방법 1. 기존 DB 선택**")
@@ -377,7 +376,6 @@ def render_category(cat_key, cat_title, cat_css_class, cat_desc):
 with st.container(border=True):
     st.markdown("#### 🧪 2. 전체 배합")
     
-    # 1행: 카테고리 1 (왼쪽) | 카테고리 2 (오른쪽)
     col_row1_1, col_row1_2 = st.columns(2)
     with col_row1_1:
         render_category("cat1", "🏢 [카테고리 1] 수지 & 경화제", "cat-1-bg", "도막의 기본 바인더 및 경화 반응 성분")
@@ -386,7 +384,6 @@ with st.container(border=True):
         
     st.divider()
     
-    # 2행: 카테고리 3 (왼쪽) | 카테고리 4 (오른쪽)
     col_row2_1, col_row2_2 = st.columns(2)
     with col_row2_1:
         render_category("cat3", "⚪ [카테고리 3] 은폐 & 체질 안료", "cat-3-bg", "은폐력, 은폐층 형성 및 물성 조절 성분")
@@ -427,7 +424,7 @@ if calc_btn:
     else:
         try:
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-1.5-pro')
+            model = genai.GenerativeModel('gemini-2.5-flash')
 
             formula_str = "\n".join([f"- {k}: {v:.2f}g" for k, v in current_formula.items()])
 
@@ -488,7 +485,7 @@ with st.container(border=True):
 
             try:
                 genai.configure(api_key=api_key)
-                model = genai.GenerativeModel('gemini-1.5-pro')
+                model = genai.GenerativeModel('gemini-2.5-flash')
 
                 formula_summary = ", ".join([f"{k}({v}g)" for k, v in current_formula.items()])
 
@@ -514,5 +511,4 @@ with st.container(border=True):
 
             except Exception as e:
                 st.error(f"오류가 발생했습니다: {e}")
-
 
