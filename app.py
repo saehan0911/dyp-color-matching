@@ -4,7 +4,7 @@ import pandas as pd
 import json
 import os
 
-# 페이지 기본 설정 (와이드 레이아웃 & 커스텀 타이틀)
+# 1. 페이지 기본 설정 (와이드 레이아웃 & 커스텀 타이틀)
 st.set_page_config(
     page_title="DYP주식회사 기술연구소 | AI 초정밀 CCM 조색 시스템",
     page_icon="🧪",
@@ -12,105 +12,171 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 커스텀 CSS (시각적 완성도 및 한글 가독성 강화)
+# 2. 고급 기업용 SaaS / 연구소 대시보드 커스텀 CSS (슬레이트/블루 대시보드 테마)
 st.markdown("""
 <style>
-    /* 메인 타이틀 디자인 */
-    .main-header {
-        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-        padding: 24px 30px;
-        border-radius: 16px;
-        color: #FFFFFF;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    html, body, [class*="css"] {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
-    .main-header h1 {
-        color: #F8FAFC;
+    
+    /* 전체 배경 톤 고도화 */
+    .stApp {
+        background-color: #F8FAFC;
+    }
+    
+    /* 메인 엔터프라이즈 헤더 */
+    .enterprise-header {
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 60%, #0F172A 100%);
+        border-bottom: 4px solid #2563EB;
+        padding: 28px 36px;
+        border-radius: 18px;
+        color: #FFFFFF;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.2);
+        margin-bottom: 24px;
+    }
+    
+    .enterprise-title {
         font-size: 2.1rem;
         font-weight: 800;
-        margin: 0 0 6px 0;
-    }
-    .main-header p {
-        color: #94A3B8;
-        font-size: 0.95rem;
+        letter-spacing: -0.02em;
+        color: #F8FAFC;
         margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
     
-    /* 뱃지 디자인 */
-    .badge-container {
-        display: flex;
-        gap: 8px;
-        margin-top: 10px;
+    .enterprise-subtitle {
+        color: #94A3B8;
+        font-size: 0.98rem;
+        margin-top: 6px;
     }
-    .security-badge {
-        background-color: rgba(239, 68, 68, 0.2);
+    
+    /* 상단 상태 뱃지 */
+    .badge-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 14px;
+        border-radius: 9999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+    .badge-red {
+        background: rgba(239, 68, 68, 0.2);
         color: #FCA5A5;
         border: 1px solid rgba(239, 68, 68, 0.4);
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
     }
-    .creator-badge {
-        background-color: rgba(59, 130, 246, 0.2);
+    .badge-blue {
+        background: rgba(59, 130, 246, 0.2);
         color: #93C5FD;
         border: 1px solid rgba(59, 130, 246, 0.4);
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
+    }
+    .badge-green {
+        background: rgba(16, 185, 129, 0.2);
+        color: #6EE7B7;
+        border: 1px solid rgba(16, 185, 129, 0.4);
     }
     
-    /* 요약 카드 */
-    .total-weight-card {
-        background-color: #F1F5F9;
-        border-left: 5px solid #3B82F6;
-        padding: 12px 20px;
+    /* 카테고리 헤더 커스텀 */
+    .cat-header {
+        padding: 10px 16px;
         border-radius: 8px;
         font-weight: 700;
-        color: #1E293B;
-        font-size: 1.1rem;
-        margin-top: 10px;
+        font-size: 1.05rem;
+        color: #FFFFFF;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .cat-1-bg { background: linear-gradient(90deg, #1E40AF, #2563EB); }
+    .cat-2-bg { background: linear-gradient(90deg, #D97706, #F59E0B); }
+    .cat-3-bg { background: linear-gradient(90deg, #059669, #10B981); }
+    .cat-4-bg { background: linear-gradient(90deg, #6D28D9, #8B5CF6); }
+    
+    /* AI 역할 카드 */
+    .ai-info-box {
+        background-color: #F1F5F9;
+        border-left: 4px solid #10B981;
+        padding: 8px 12px;
+        border-radius: 0 6px 6px 0;
+        font-size: 0.86rem;
+        color: #334155;
+        margin-top: 4px;
+        margin-bottom: 12px;
     }
     
-    /* AI 재료 설명 카드 */
-    .material-info-card {
-        background-color: #F8FAFC;
+    /* 총중량 대시보드 KPI 카드 */
+    .kpi-container {
+        background: #FFFFFF;
         border: 1px solid #E2E8F0;
-        border-left: 4px solid #10B981;
-        padding: 10px 14px;
-        border-radius: 6px;
-        margin-top: 6px;
-        font-size: 0.88rem;
-        color: #334155;
+        border-radius: 14px;
+        padding: 18px 24px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        margin: 20px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .kpi-label {
+        font-size: 0.9rem;
+        color: #64748B;
+        font-weight: 600;
+    }
+    .kpi-val {
+        font-size: 2.1rem;
+        font-weight: 800;
+        color: #1E293B;
     }
 
-    .stButton>button {
-        border-radius: 8px;
-        font-weight: 600;
+    /* 버튼 스타일 개편 */
+    .stButton > button {
+        border-radius: 8px !important;
+        font-weight: 700 !important;
+        transition: all 0.2s ease-in-out !important;
+    }
+    .stButton > button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 메인 상단 헤더 & 로고 조화로운 레이아웃
-logo_file_path = "logo.png"
+# 로고 파일 탐색
+logo_candidates = ["logo.png", "logo.jpg", "image.png", "image.jpg"]
+found_logo = None
+for candidate in logo_candidates:
+    if os.path.exists(candidate):
+        found_logo = candidate
+        break
 
+# 메인 상단 헤더 & 로고 레이아웃
 col_head_logo, col_head_title = st.columns([1, 4])
 
 with col_head_logo:
-    if os.path.exists(logo_file_path):
-        st.image(logo_file_path, use_container_width=True)
+    if found_logo:
+        st.image(found_logo, use_container_width=True)
     else:
-        st.markdown("<div style='text-align:center; padding: 20px; color:#94A3B8; font-weight:bold;'>DYP LOGO</div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style="background-color:#0F172A; border-radius:14px; padding:20px; text-align:center; border: 1px solid #334155;">
+            <div style="font-size:1.6rem; font-weight:900; color:#38BDF8; letter-spacing:-0.05em;">DYP</div>
+            <div style="font-size:0.75rem; color:#94A3B8; font-weight:600; margin-top:2px;">기술연구소</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 with col_head_title:
     st.markdown("""
-    <div class="main-header">
-        <h1>🧪 DYP주식회사 기술연구소 조색프로그램</h1>
-        <p>환경친화형 분체도료 AI 초정밀(0.01g) Color Matching & Real-time Q&A System</p>
-        <div class="badge-container">
-            <span class="security-badge">🔒 영업비밀 엄수 (Confidential)</span>
-            <span class="creator-badge">👤 제작자: 기술연구소 최새한 대리</span>
+    <div class="enterprise-header">
+        <div class="enterprise-title">
+            🧪 DYP주식회사 기술연구소 조색프로그램
+        </div>
+        <div class="enterprise-subtitle">
+            환경친화형 분체도료 AI 초정밀(0.01g) Color Matching & Real-time Reasoning Q&A System
+        </div>
+        <div style="display:flex; gap:10px; margin-top:14px;">
+            <span class="badge-pill badge-red">🔒 영업비밀 엄수 (Confidential)</span>
+            <span class="badge-pill badge-blue">👤 제작자: 기술연구소 최새한 대리</span>
+            <span class="badge-pill badge-green">🟢 AI Pro Engine Online</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -209,15 +275,15 @@ def explain_material_with_ai(mat_name, api_key):
 
 # 사이드바 설정
 with st.sidebar:
-    if os.path.exists(logo_file_path):
-        st.image(logo_file_path, use_container_width=True)
+    if found_logo:
+        st.image(found_logo, use_container_width=True)
     
     st.title("⚙️ 시스템 설정")
     api_key = st.text_input("🔑 Gemini API Key", type="password")
     st.markdown("[👉 API Key 무료 발급받기](https://aistudio.google.com/app/apikey)")
     
     if api_key:
-        st.success("🟢 AI 실시간 연동 완료 (Pro Engine)")
+        st.success("🟢 AI 실시간 연동 완료")
     else:
         st.warning("🔴 API Key를 입력해주세요")
         
@@ -227,7 +293,7 @@ with st.sidebar:
     st.caption("**담당:** 최새한 대리")
     
     st.divider()
-    st.markdown("### 🛠️ 데이터 초기화")
+    st.markdown("### 🛠️ 데이터 관리")
     col_reset1, col_reset2 = st.columns(2)
     with col_reset1:
         if st.button("🗑️ 재료 DB 리셋", use_container_width=True):
@@ -253,22 +319,22 @@ with st.container(border=True):
     with c3:
         std_b = st.number_input("STD b* (황/청)", value=11.19, format="%.2f")
 
-# 2. 카테고리별 동적 처방 입력
-st.markdown("#### 🧪 2. 카테고리별 전체 처방 설정 (예시 데이터 기본 탑재)")
+# 2. 카테고리별 전체 처방 설정 (한 페이지 일체형 대시보드)
+st.markdown("#### 🧪 2. 전체 배합 처방 설정 (한 페이지 일체형 레이아웃)")
 
-tab1, tab2, tab3, tab4 = st.tabs([
-    "🏢 [카테고리 1] 수지 & 경화제",
-    "⚡ [카테고리 2] 기능성 첨가제",
-    "⚪ [카테고리 3] 은폐 & 체질 안료",
-    "🎨 [카테고리 4] 유색 착색 안료"
-])
+cats_info = [
+    ("cat1", "🏢 [카테고리 1] 수지 & 경화제", "cat-1-bg", "도막의 기본 바인더 및 내화학성/경화 반응 성분입니다."),
+    ("cat2", "⚡ [카테고리 2] 기능성 첨가제", "cat-2-bg", "레벨링, 탈포, 슬립 및 표면 상태 제어 첨가제입니다."),
+    ("cat3", "⚪ [카테고리 3] 은폐 & 체질 안료", "cat-3-bg", "은폐력, 은폐층 형성 및 소광/물성 조절 성분입니다."),
+    ("cat4", "🎨 [카테고리 4] 유색 착색 안료", "cat-4-bg", "L*, a*, b* 색상 미세 조율용 착색 안료 및 희석액입니다.")
+]
 
-cats = [("cat1", tab1, "수지/경화제"), ("cat2", tab2, "기능성 첨가제"), ("cat3", tab3, "은폐/체질재"), ("cat4", tab4, "유색 착색 안료")]
 current_formula = {}
 
-for cat_key, tab_obj, cat_label in cats:
-    with tab_obj:
-        st.caption(f"이 카테고리({cat_label})의 예시 재료들이 기본 로드되어 있습니다. 추가 시 2가지 방법(기존 DB 선택 또는 직접 타이핑)을 사용할 수 있습니다.")
+for cat_key, cat_title, cat_css_class, cat_desc in cats_info:
+    with st.container(border=True):
+        st.markdown(f'<div class="cat-header {cat_css_class}"><span>{cat_title}</span></div>', unsafe_allow_html=True)
+        st.caption(cat_desc)
         
         items_to_remove = []
         for idx, item in enumerate(st.session_state.materials[cat_key]):
@@ -283,11 +349,10 @@ for cat_key, tab_obj, cat_label in cats:
                     items_to_remove.append(idx)
             
             st.markdown(f"""
-            <div class="material-info-card">
+            <div class="ai-info-box">
                 💡 <b>AI 역할 분석:</b> {item.get('desc', 'AI 분석 중...')}
             </div>
             """, unsafe_allow_html=True)
-            st.write("")
             
             current_formula[item["name"]] = item["amount"]
             
@@ -296,77 +361,71 @@ for cat_key, tab_obj, cat_label in cats:
                 st.session_state.materials[cat_key].pop(i)
             st.rerun()
 
-        st.markdown("---")
-        st.markdown(f"##### ➕ 새로운 {cat_label} 재료 추가하기 (2가지 방법)")
-        
+        # 2-Way 재료 추가
+        st.markdown(f"**➕ {cat_title.split(']')[1]} 재료 추가 (2가지 방식)**")
         col_method1, col_method2 = st.columns(2)
         
-        # 방법 1: 기존 저장된 재료 선택
+        # 방법 1: 기존 DB 선택
         with col_method1:
-            with st.container(border=True):
-                st.markdown("**방법 1. 기존 재료 DB 선택**")
-                lib_items = st.session_state.library.get(cat_key, [])
-                lib_names = [item["name"] for item in lib_items]
-                
-                selected_lib_name = st.selectbox(f"{cat_label} DB 목록", options=["-- 선택하세요 --"] + lib_names, key=f"sel_lib_{cat_key}")
-                init_amt_lib = st.number_input("투입량(g)", value=1.00, format="%.2f", step=0.01, key=f"amt_lib_{cat_key}")
-                
-                if st.button("➕ DB 재료 불러와 추가", key=f"btn_add_lib_{cat_key}", use_container_width=True):
-                    if selected_lib_name != "-- 선택하세요 --":
-                        lib_match = next((x for x in lib_items if x["name"] == selected_lib_name), None)
-                        desc_val = lib_match["desc"] if lib_match else "저장된 원료"
-                        
-                        st.session_state.materials[cat_key].append({
-                            "name": selected_lib_name,
-                            "desc": desc_val,
-                            "amount": init_amt_lib
-                        })
-                        st.success(f"'{selected_lib_name}' 재료가 추가되었습니다!")
-                        st.rerun()
-                    else:
-                        st.warning("목록에서 재료를 선택해주세요.")
+            lib_items = st.session_state.library.get(cat_key, [])
+            lib_names = [item["name"] for item in lib_items]
+            selected_lib_name = st.selectbox(f"기존 DB 목록 선택", options=["-- 선택하세요 --"] + lib_names, key=f"sel_lib_{cat_key}")
+            init_amt_lib = st.number_input("투입량(g)", value=1.00, format="%.2f", step=0.01, key=f"amt_lib_{cat_key}")
+            if st.button("➕ DB 재료 추가", key=f"btn_add_lib_{cat_key}", use_container_width=True):
+                if selected_lib_name != "-- 선택하세요 --":
+                    lib_match = next((x for x in lib_items if x["name"] == selected_lib_name), None)
+                    desc_val = lib_match["desc"] if lib_match else "저장된 원료"
+                    st.session_state.materials[cat_key].append({
+                        "name": selected_lib_name,
+                        "desc": desc_val,
+                        "amount": init_amt_lib
+                    })
+                    st.success(f"'{selected_lib_name}' 추가 완료!")
+                    st.rerun()
+                else:
+                    st.warning("목록에서 재료를 선택해주세요.")
 
-        # 방법 2: 신규 재료 직접 타이핑
+        # 방법 2: 신규 타이핑
         with col_method2:
-            with st.container(border=True):
-                st.markdown("**방법 2. 직접 타이핑 입력 (AI 자동 분석)**")
-                typed_name = st.text_input("신규 재료명 입력", placeholder="예: Phthalo Blue 5%, Wax-100...", key=f"type_name_{cat_key}")
-                init_amt_typed = st.number_input("투입량(g)", value=1.00, format="%.2f", step=0.01, key=f"amt_typed_{cat_key}")
-                
-                if st.button("➕ 직접 입력 재료 추가 & DB 저장", key=f"btn_add_typed_{cat_key}", use_container_width=True):
-                    if typed_name.strip():
-                        name_clean = typed_name.strip()
-                        with st.spinner("🧠 AI가 신규 재료의 역할 및 화학적 특성을 검색/분석 중입니다..."):
-                            ai_desc = explain_material_with_ai(name_clean, api_key)
-                        
-                        st.session_state.materials[cat_key].append({
+            typed_name = st.text_input("신규 재료명 직접 입력", placeholder="예: Phthalo Blue 5%...", key=f"type_name_{cat_key}")
+            init_amt_typed = st.number_input("투입량(g)", value=1.00, format="%.2f", step=0.01, key=f"amt_typed_{cat_key}")
+            if st.button("➕ 신규 입력 & DB 영구 저장", key=f"btn_add_typed_{cat_key}", use_container_width=True):
+                if typed_name.strip():
+                    name_clean = typed_name.strip()
+                    with st.spinner("🧠 AI가 신규 재료 역할을 검색/분석 중입니다..."):
+                        ai_desc = explain_material_with_ai(name_clean, api_key)
+                    
+                    st.session_state.materials[cat_key].append({
+                        "name": name_clean,
+                        "desc": ai_desc,
+                        "amount": init_amt_typed
+                    })
+                    
+                    if not any(x["name"] == name_clean for x in st.session_state.library[cat_key]):
+                        st.session_state.library[cat_key].append({
                             "name": name_clean,
-                            "desc": ai_desc,
-                            "amount": init_amt_typed
+                            "desc": ai_desc
                         })
-                        
-                        if not any(x["name"] == name_clean for x in st.session_state.library[cat_key]):
-                            st.session_state.library[cat_key].append({
-                                "name": name_clean,
-                                "desc": ai_desc
-                            })
-                            save_library(st.session_state.library)
-                        
-                        st.success(f"'{name_clean}' 재료가 추가되었으며 재료 DB에 영구 저장되었습니다!")
-                        st.rerun()
-                    else:
-                        st.warning("재료명을 입력해주세요.")
+                        save_library(st.session_state.library)
+                    
+                    st.success(f"'{name_clean}' 추가 및 DB 저장 완료!")
+                    st.rerun()
+                else:
+                    st.warning("재료명을 입력해주세요.")
 
-# 전체 배합 중량 자동 합산
+# 전체 배합 중량 KPI 대시보드
 total_weight = sum(current_formula.values())
 st.markdown(f"""
-<div class="total-weight-card">
-    ⚖️ 현재 설정된 전체 배합 총중량 ({len(current_formula)}개 재료): <span style="color:#2563EB;">{total_weight:.2f} g</span>
+<div class="kpi-container">
+    <div>
+        <div class="kpi-label">전체 설정 처방 총중량 (Total Batch Weight)</div>
+        <div style="font-size:0.85rem; color:#64748B;">총 {len(current_formula)}개 등록 재료 성분 밸런스 합산</div>
+    </div>
+    <div class="kpi-val" style="color:#2563EB;">{total_weight:.2f} <span style="font-size:1.2rem; color:#64748B;">g</span></div>
 </div>
 """, unsafe_allow_html=True)
 
 # 3. 차수 및 CIE 오차
-st.divider()
 with st.container(border=True):
     st.markdown("#### 📐 3. 차수 및 측정 결과 (CIE 오차 Δ)")
     c_b, c_l, c_a, c_b_axis = st.columns([1, 1, 1, 1])
@@ -475,4 +534,3 @@ with st.container(border=True):
 
             except Exception as e:
                 st.error(f"오류가 발생했습니다: {e}")
-
