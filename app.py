@@ -139,7 +139,7 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-# 메인 헤더 (요청하신 불필요한 뱃지 문구 삭제)
+# 메인 헤더
 st.markdown("""
 <div class="enterprise-header">
     <div class="enterprise-title">
@@ -208,7 +208,6 @@ DEFAULT_LIBRARY = {
         {"name": "Violet 23 (5%)", "desc": "바이올렛 유기안료 5% 희석액 (보라/적청기 조율)"}
     ]
 }
-# 💡 원본에 있던 10개 데이터를 단 하나도 빠짐없이 복구했습니다.
 DEFAULT_FULL_HISTORY = [
     {"batch_no": 1, "timestamp": "2026-10-19 09:00:00", "std_l": 89.63, "std_a": 1.32, "std_b": 11.19, "dl": 1.25, "da": -0.85, "db": 0.95, "delta_e": 1.783, "formula_json": json.dumps({"PEP-1681": 360.0, "E-12": 240.0, "TiO2 R-996": 285.0, "CaCO3": 75.0, "HI-BLACK 50L (5%)": 0.30, "P-261 YELLOW": 5.0, "RED-107 (5%)": 1.0}, ensure_ascii=False), "note": "초기 배합 (L* 명도 수치 과다)"},
     {"batch_no": 2, "timestamp": "2026-10-19 10:15:00", "std_l": 89.63, "std_a": 1.32, "std_b": 11.19, "dl": 0.88, "da": -0.52, "db": 0.61, "delta_e": 1.191, "formula_json": json.dumps({"PEP-1681": 360.0, "E-12": 240.0, "TiO2 R-996": 285.0, "CaCO3": 75.0, "HI-BLACK 50L (5%)": 0.40, "P-261 YELLOW": 5.8, "RED-107 (5%)": 1.4}, ensure_ascii=False), "note": "HI-BLACK 5% 증량 보정"},
@@ -347,7 +346,7 @@ with st.sidebar:
     active_api_key, key_status_msg = get_validated_api_key(user_key_input)
    
     if active_api_key:
-        st.success(f"🟢 Gemini 1.5 Flash API 연결 완료 (에러 수정됨)")
+        st.success(f"🟢 Gemini API 연결 완료 (에러 수정됨)")
     else:
         st.error(f"🔴 API Key 오류: {key_status_msg}")
         st.markdown("[👉 Google AI Studio에서 키 발급받기](https://aistudio.google.com/app/apikey)")
@@ -464,14 +463,14 @@ def render_category(cat_key, cat_title, cat_css_class, cat_desc):
             if st.button("🗑️", key=f"del_{cat_key}_{idx}"):
                 items_to_remove.append(idx)
        
-        # 💡 원료 이름 변경 시 실시간 동적 갱신 (1.5-flash 적용 완료)
+        # 💡 원료 이름 변경 시 실시간 동적 갱신 (가장 호환성 높은 gemini-pro 적용)
         if new_name != item["name"]:
             item["name"] = new_name
             item["desc"] = "AI 검색 중..."
             if active_api_key and new_name.strip():
                 try:
                     genai.configure(api_key=active_api_key)
-                    model_temp = genai.GenerativeModel('gemini-1.5-flash')
+                    model_temp = genai.GenerativeModel('gemini-pro')
                     item["desc"] = model_temp.generate_content(f"분체도료 원료 '{new_name}'의 역할을 1줄로 요약해줘.").text.strip()
                 except Exception:
                     item["desc"] = "AI 검색 실패"
@@ -519,7 +518,7 @@ def render_category(cat_key, cat_title, cat_css_class, cat_desc):
                 if active_api_key:
                     with st.spinner("🧠 AI 역할 분석 중..."):
                         genai.configure(api_key=active_api_key)
-                        model = genai.GenerativeModel('gemini-1.5-flash')
+                        model = genai.GenerativeModel('gemini-pro')
                         res_desc = model.generate_content(f"{EMBEDDED_KNOWLEDGE_SYSTEM_PROMPT}\n원료 '{name_clean}'의 역할을 1문장으로 설명해줘.").text.strip()
                 else:
                     res_desc = "사용자 등록 신규 원료"
@@ -598,7 +597,7 @@ if calc_btn:
             ai_rules = get_ai_memory_rules()
            
             genai.configure(api_key=active_api_key)
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-pro')
             formula_str = "\n".join([f"- {k}: {v:.2f}g" for k, v in current_formula.items()])
            
             prompt = f"""
@@ -632,7 +631,7 @@ if calc_btn:
             ### 3. 💡 학습 기반 보정 근거 및 0.01g 산출 이유 (유사한 배합 환경에서 실무자가 강제 주입한 룰을 발견했다면, 그 상호작용 룰을 반영했다고 명시)
             """
            
-            with st.spinner("🧠 1.5-Flash 엔진이 안료 상호작용과 누적 데이터를 결합하여 0.01g 수치를 계산 중입니다..."):
+            with st.spinner("🧠 Gemini-Pro 엔진이 안료 상호작용과 누적 데이터를 결합하여 0.01g 수치를 계산 중입니다..."):
                 response = model.generate_content(prompt)
                 st.session_state.last_ai_result = {
                     "batch_next": batch_num + 1,
@@ -690,7 +689,7 @@ with st.container(border=True):
             st.session_state.chat_history.append({"role": "user", "content": user_query})
             try:
                 genai.configure(api_key=active_api_key)
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('gemini-pro')
                
                 qa_prompt = f"""
                 {EMBEDDED_KNOWLEDGE_SYSTEM_PROMPT}
@@ -737,7 +736,7 @@ with st.container(border=True):
                
                 # AI 대답 유도
                 genai.configure(api_key=active_api_key)
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('gemini-pro')
                 reply_prompt = f"너는 조색 AI다. 실무자가 다음 현장 노하우를 주입했다:\n[노하우] {user_feedback}\n이 특정 상황(Context)에서의 안료 상호작용을 완벽히 이해했고, 앞으로 비슷한 상황을 맞닥뜨리면 이 룰을 1순위로 반영하겠다는 대답을 '💡 AI 학습 완료:' 로 시작하는 2~3줄 문장으로 해라."
                 res = model.generate_content(reply_prompt)
                 st.session_state.last_learned_msg = res.text
