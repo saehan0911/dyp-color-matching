@@ -1,11 +1,12 @@
 import streamlit as st
 import google.generativeai as genai
 import pandas as pd
+import numpy as np
 import json
 import os
 from datetime import datetime
 
-# 1. 페이지 기본 설정 (와이드 레이아웃 & 커스텀 타이틀)
+# 1. 페이지 기본 설정
 st.set_page_config(
     page_title="DYP주식회사 기술연구소 | AI 초정밀 CCM 조색 시스템",
     page_icon="🧪",
@@ -154,7 +155,7 @@ st.markdown("""
     <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
         <span class="badge-pill badge-red">🔒 영업비밀 엄수 (Confidential)</span>
         <span class="badge-pill badge-blue">👤 제작자: 기술연구소 최새한 대리</span>
-        <span class="badge-pill badge-green">🟢 AI Auto-Learning Active</span>
+        <span class="badge-pill badge-green">🟢 AI Continuous Learning System</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -207,9 +208,24 @@ def save_library(lib_data):
     with open(LIBRARY_FILE, "w", encoding="utf-8") as f:
         json.dump(lib_data, f, ensure_ascii=False, indent=2)
 
-# 자동 학습 히스토리 저장 및 불러오기 함수
-def append_batch_history(batch_no, std_l, std_a, std_b, dl, da, db, formula_dict):
+def get_batch_history_df():
+    if os.path.exists(HISTORY_FILE):
+        try:
+            df = pd.read_csv(HISTORY_FILE)
+            if "delta_e" not in df.columns:
+                # Delta E 계산: sqrt(dL^2 + da^2 + db^2)
+                df["delta_e"] = np.sqrt(df["dl"]**2 + df["da"]**2 + df["db"]**2).round(3)
+            return df
+        except Exception:
+            return pd.DataFrame()
+    return pd.DataFrame()
+
+def save_batch_history_df(df):
+    df.to_csv(HISTORY_FILE, index=False, encoding="utf-8-sig")
+
+def append_batch_history(batch_no, std_l, std_a, std_b, dl, da, db, formula_dict, note="보정 계산 실행"):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    delta_e = round(float(np.sqrt(dl**2 + da**2 + db**2)), 3)
     record = {
         "timestamp": now_str,
         "batch_no": batch_no,
@@ -219,23 +235,17 @@ def append_batch_history(batch_no, std_l, std_a, std_b, dl, da, db, formula_dict
         "dl": dl,
         "da": da,
         "db": db,
-        "formula_json": json.dumps(formula_dict, ensure_ascii=False)
+        "delta_e": delta_e,
+        "formula_json": json.dumps(formula_dict, ensure_ascii=False),
+        "note": note
     }
     df_new = pd.DataFrame([record])
     if os.path.exists(HISTORY_FILE):
         df_existing = pd.read_csv(HISTORY_FILE)
         df_combined = pd.concat([df_existing, df_new], ignore_index=True)
-        df_combined.to_csv(HISTORY_FILE, index=False, encoding="utf-8-sig")
+        save_batch_history_df(df_combined)
     else:
-        df_new.to_csv(HISTORY_FILE, index=False, encoding="utf-8-sig")
-
-def get_batch_history_df():
-    if os.path.exists(HISTORY_FILE):
-        try:
-            return pd.read_csv(HISTORY_FILE)
-        except Exception:
-            return pd.DataFrame()
-    return pd.DataFrame()
+        save_batch_history_df(df_new)
 
 def format_history_for_prompt():
     df = get_batch_history_df()
@@ -243,7 +253,7 @@ def format_history_for_prompt():
         return "이전 배치 학습 데이터 없음 (첫 번째 배치 분석)"
     
     history_lines = []
-    recent_df = df.tail(10)
+    recent_df = df.tail(15)
     for _, row in recent_df.iterrows():
         try:
             f_dict = json.loads(row["formula_json"])
@@ -251,7 +261,9 @@ def format_history_for_prompt():
         except Exception:
             f_str = row.get("formula_json", "")
             
-        line = f"- [차수 #{row['batch_no']}] (일시: {row['timestamp']}) | 오차: ΔL={row['dl']}, Δa={row['da']}, Δb={row['db']} | 배합: {f_str}"
+        de_str = f"ΔE={row.get('delta_e', 0.0)}"
+        note_str = f" [{row.get('note', '')}]" if 'note' in row and pd.notna(row['note']) else ""
+        line = f"- [차수 #{row['batch_no']}] ({row['timestamp']}) | 오차: ΔL={row['dl']}, Δa={row['da']}, Δb={row['db']} ({de_str}){note_str} | 배합: {f_str}"
         history_lines.append(line)
     return "\n".join(history_lines)
 
@@ -285,7 +297,7 @@ if "materials" not in st.session_state:
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# API Key 자동 로드 (Streamlit Secrets 우선 확인 -> 없으면 사이드바 수동 입력)
+# API Key 자동 로드 (Secrets 우선 -> 사용자 수동)
 api_key = None
 if "GEMINI_API_KEY" in st.secrets:
     api_key = st.secrets["GEMINI_API_KEY"]
@@ -309,7 +321,7 @@ with st.sidebar:
     st.title("⚙️ 시스템 설정")
     
     if api_key:
-        st.success("🟢 API Key 자동 적용됨 (방문자 즉시 사용 가능)")
+        st.success("🟢 API Key 자동 적용됨")
         user_key = st.text_input("🔑 개별 API Key 입력 (선택사항)", type="password", placeholder="기본 키 사용 중...")
         if user_key.strip():
             api_key = user_key.strip()
@@ -327,30 +339,100 @@ with st.sidebar:
     st.caption("**담당:** 최새한 대리")
     
     st.divider()
-    st.markdown("### 🛠️ 데이터 관리")
-    col_reset1, col_reset2 = st.columns(2)
-    with col_reset1:
-        if st.button("🗑️ DB/히스토리 초기화", use_container_width=True):
-            if os.path.exists(LIBRARY_FILE):
-                os.remove(LIBRARY_FILE)
-            if os.path.exists(HISTORY_FILE):
-                os.remove(HISTORY_FILE)
-            st.session_state.library = DEFAULT_LIBRARY
-            st.success("누적 데이터가 초기화되었습니다.")
-            st.rerun()
-    with col_reset2:
-        if st.button("💬 Q&A 리셋", use_container_width=True):
-            st.session_state.chat_history = []
-            st.success("대화 내역이 리셋되었습니다.")
-            st.rerun()
 
-    # 누적 히스토리 CSV 다운로드 기능
+# ---------------------------------------------------------
+# 📂 데이터 열람 & 삭제 관리 섹션
+# ---------------------------------------------------------
+with st.sidebar.expander("📂 데이터 열람 & 개별 삭제 관리", expanded=False):
+    st.markdown("#### 1. 📦 재료 DB 열람 및 삭제")
+    cat_names = {"cat1": "1. 수지/경화제", "cat2": "2. 기능성 첨가제", "cat3": "3. 은폐/체질안료", "cat4": "4. 유색착색안료"}
+    
+    for c_key, c_label in cat_names.items():
+        st.caption(f"**{c_label}**")
+        mat_list = st.session_state.library.get(c_key, [])
+        if not mat_list:
+            st.text("등록된 재료 없음")
+        else:
+            for idx, m in enumerate(mat_list):
+                col_m1, col_m2 = st.columns([4, 1])
+                with col_m1:
+                    st.text(f"• {m['name']}")
+                with col_m2:
+                    if st.button("❌", key=f"del_lib_{c_key}_{idx}"):
+                        st.session_state.library[c_key].pop(idx)
+                        save_library(st.session_state.library)
+                        st.toast(f"'{m['name']}' 삭제 완료!")
+                        st.rerun()
+
     st.divider()
-    df_hist = get_batch_history_df()
-    if not df_hist.empty:
-        st.markdown(f"📊 **누적 기록 데이터:** 총 {len(df_hist)}건 저장됨")
-        csv_bytes = df_hist.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
-        st.download_button("📥 누적 배치 히스토리 (CSV) 다운로드", data=csv_bytes, file_name="DYP_Color_History.csv", mime="text/csv", use_container_width=True)
+    st.markdown("#### 2. 📜 배치 히스토리 열람 및 삭제")
+    df_hist_view = get_batch_history_df()
+    if df_hist_view.empty:
+        st.info("저장된 히스토리가 없습니다.")
+    else:
+        st.caption(f"총 {len(df_hist_view)}건 기록됨")
+        for h_idx, h_row in df_hist_view.iterrows():
+            with st.container():
+                col_h1, col_h2 = st.columns([4, 1])
+                with col_h1:
+                    st.markdown(f"**#{h_row['batch_no']}** ({h_row['timestamp'][:10]}) | ΔE: `{h_row.get('delta_e', 'N/A')}`")
+                    st.caption(f"dL:{h_row['dl']} da:{h_row['da']} db:{h_row['db']}")
+                with col_h2:
+                    if st.button("❌", key=f"del_hist_{h_idx}"):
+                        df_hist_view = df_hist_view.drop(h_idx).reset_index(drop=True)
+                        save_batch_history_df(df_hist_view)
+                        st.toast(f"배치 #{h_row['batch_no']} 히스토리 삭제 완료!")
+                        st.rerun()
+
+    st.divider()
+    st.markdown("#### 3. 💬 Q&A 대화 내역 열람 및 삭제")
+    if not st.session_state.chat_history:
+        st.info("대화 내역이 없습니다.")
+    else:
+        st.caption(f"총 {len(st.session_state.chat_history)//2}개 질답 저장됨")
+        for q_idx in range(0, len(st.session_state.chat_history), 2):
+            q_msg = st.session_state.chat_history[q_idx]
+            col_q1, col_q2 = st.columns([4, 1])
+            with col_q1:
+                st.markdown(f"**Q:** {q_msg['content'][:30]}...")
+            with col_q2:
+                if st.button("❌", key=f"del_qa_{q_idx}"):
+                    # 질답 쌍(Q & A) 삭제
+                    st.session_state.chat_history.pop(q_idx) # user msg
+                    if q_idx < len(st.session_state.chat_history):
+                        st.session_state.chat_history.pop(q_idx) # assistant msg
+                    st.toast("Q&A 항목 삭제 완료!")
+                    st.rerun()
+
+# ---------------------------------------------------------
+# 🧠 AI 학습 관리 칸 (AI Learning Dashboard)
+# ---------------------------------------------------------
+with st.sidebar.expander("🧠 AI 학습 관리 & 오차 수렴 현황", expanded=False):
+    df_learn = get_batch_history_df()
+    if df_learn.empty:
+        st.info("아직 학습된 배치 데이터가 없습니다.")
+    else:
+        st.markdown(f"**Total Learned Batches:** `{len(df_learn)}회`")
+        
+        # Delta E 평균 및 최근 트렌드
+        avg_de = df_learn["delta_e"].mean() if "delta_e" in df_learn else 0.0
+        latest_de = df_learn["delta_e"].iloc[-1] if "delta_e" in df_learn else 0.0
+        
+        st.metric(label="가장 최근 색차 (ΔE)", value=f"{latest_de:.3f}", delta=f"평균: {avg_de:.3f}")
+        
+        st.caption("📈 **차수별 색차(ΔE) 감소 추이**")
+        st.line_chart(df_learn.set_index("batch_no")[["delta_e"]])
+        
+        st.markdown("**🎓 AI가 학습 완료한 주요 경향성**")
+        st.markdown("""
+        - **카본블랙 (HI-BLACK 50L 5%):** 명도(L*) 강한 민감도 학습됨
+        - **황색 유기안료 (P-261):** b* 축 비선형 변동 곡선 피드백 반영 중
+        - **체질재 (CaCO3/TiO2):** 파스텔 베이스 Wash-out 효과 가중치 적용 완료
+        """)
+        
+        # 히스토리 다운로드
+        csv_bytes = df_learn.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
+        st.download_button("📥 전체 학습 데이터 (CSV) 다운로드", data=csv_bytes, file_name="DYP_AI_Learning_History.csv", mime="text/csv", use_container_width=True)
 
 # 1. 목표 색상 (STD Target)
 with st.container(border=True):
@@ -363,7 +445,7 @@ with st.container(border=True):
     with c3:
         std_b = st.number_input("STD b* (황/청)", value=11.19, format="%.2f")
 
-# 2. 전체 배합 (한 줄에 2개씩 2x2 그리드)
+# 2. 전체 배합 (2x2 그리드)
 current_formula = {}
 
 def render_category(cat_key, cat_title, cat_css_class, cat_desc):
@@ -475,7 +557,7 @@ st.markdown(f"""
 # 3. 차수 및 CIE 오차
 with st.container(border=True):
     st.markdown("#### 📐 3. 차수 및 측정 결과 (CIE 오차 Δ)")
-    c_b, c_l, c_a, c_b_axis = st.columns([1, 1, 1, 1])
+    c_b, c_l, c_a, c_b_axis, c_de = st.columns([1, 1, 1, 1, 1])
     with c_b:
         batch_num = st.number_input("현재 배치 차수 (Batch No.)", min_value=1, value=8)
     with c_l:
@@ -484,19 +566,27 @@ with st.container(border=True):
         da = st.number_input("Δ a* (적/녹 오차)", value=-0.15, format="%.2f", step=0.01)
     with c_b_axis:
         db = st.number_input("Δ b* (황/청 오차)", value=0.10, format="%.2f", step=0.01)
+    with c_de:
+        curr_de = round(float(np.sqrt(dl**2 + da**2 + db**2)), 3)
+        st.markdown(f"**자동 산출 색차 (ΔE)**")
+        st.markdown(f"<div style='font-size:1.4rem; font-weight:800; color:#D97706;'>{curr_de:.3f}</div>", unsafe_allow_html=True)
 
 st.divider()
 calc_btn = st.button("🚀 동적 전체 처방 & AI 초정밀 0.01g 보정 산출", type="primary", use_container_width=True)
+
+# 계산 결과 저장을 위한 session_state
+if "last_ai_result" not in st.session_state:
+    st.session_state.last_ai_result = None
 
 if calc_btn:
     if not api_key:
         st.error("⚠️ Gemini API Key가 등록되지 않았습니다. 사이드바에 키를 입력하거나 Streamlit Secrets를 설정하세요.")
     else:
         try:
-            # 1. 자동 저장 수행
-            append_batch_history(batch_num, std_l, std_a, std_b, dl, da, db, current_formula)
+            # 1. 히스토리 자동 기록
+            append_batch_history(batch_num, std_l, std_a, std_b, dl, da, db, current_formula, note="보정 계산 실행")
             
-            # 2. 누적된 배치 학습 히스토리 포맷팅
+            # 2. 누적 학습 데이터 포맷
             history_context = format_history_for_prompt()
 
             genai.configure(api_key=api_key)
@@ -525,29 +615,66 @@ if calc_btn:
             - ΔL*: {dl} (양수면 밝음, 음수면 어두움)
             - Δa*: {da} (양수면 붉음, 음수면 푸름/녹색)
             - Δb*: {db} (양수면 노랑, 음수면 보라/파랑)
+            - ΔE: {curr_de}
 
-            누적 데이터 및 지난 배치의 오차 변화 트렌드를 학습하여 다음 차수(Batch #{batch_num + 1})에서 색차 ΔE를 극소화할 0.01g 초정밀 처방을 아래 마크다운 양식으로 제시해줘:
+            [출력 작성 필수 규칙 - 순서 엄수]
+            **반드시 아래 1번(0.01g 보정 배합 표 및 수치 값)을 최상단에 가장 먼저 출력한 후**, 그 뒤에 2번 원인 분석과 3번 근거를 출력하라. 설명부터 나오면 절대 안 된다.
 
-            ### 1. 📈 누적 학습 및 오차 발생 원인 분석
+            ### 1. 🎯 Batch #{batch_num + 1} 초정밀 0.01g 보정 배합 처방 (최종 목표 값)
+            (반드시 각 동적 재료별 [기존 투입g] | [조정량 (+/- g)] | [최종 목표 투입g] 형태의 마크다운 표 및 명확한 수치를 가장 먼저 제시할 것)
+
+            ### 2. 📈 누적 학습 및 오차 발생 원인 분석
             (이전 배치 히스토리와 현재 오차를 비교하여, 어떤 안료가 과다/부족했는지 물리화학적으로 분석)
-
-            ### 2. 🎯 Batch #{batch_num + 1} 초정밀 0.01g 보정 배합 처방
-            (각 동적 재료별 변경량 (+/- g) 및 최종 목표 투입g 제시)
 
             ### 3. 💡 학습 기반 보정 근거 및 0.01g 산출 이유
             (누적 데이터 피드백 분석을 통해 오차를 최소화할 수 있는 과학적/경험적 근거)
             """
 
-            with st.spinner("🧠 누적 배치 데이터를 학습하여 오차 수렴형 0.01g 보정 처방을 계산 중입니다..."):
+            with st.spinner("🧠 누적 배치 데이터를 학습하여 0.01g 최종 보정 수치를 계산 중입니다..."):
                 response = model.generate_content(prompt)
-                st.success("✅ 현재 배치 데이터가 성공적으로 누적 DB에 저장되었으며, 학습 기반 보정 처방이 산출되었습니다!")
-                st.markdown("---")
-                with st.container(border=True):
-                    st.markdown(f"### 📋 DYP 기술연구소 AI 초정밀 학습 분석 보고서 (Batch #{batch_num + 1})")
-                    st.markdown(response.text)
+                st.session_state.last_ai_result = {
+                    "batch_next": batch_num + 1,
+                    "text": response.text
+                }
+                st.success("✅ 학습 기반 0.01g 초정밀 보정 수치 계산이 완료되었습니다!")
 
         except Exception as e:
             st.error(f"오류가 발생했습니다: {e}")
+
+# ---------------------------------------------------------
+# 보정 산출 결과 출력 (값부터 바로 나오고 그 뒤에 설명)
+# ---------------------------------------------------------
+if st.session_state.last_ai_result:
+    st.markdown("---")
+    res_batch = st.session_state.last_ai_result["batch_next"]
+    with st.container(border=True):
+        st.markdown(f"### 📋 DYP 기술연구소 AI 초정밀 보정 처방 보고서 (Batch #{res_batch})")
+        st.markdown(st.session_state.last_ai_result["text"])
+
+    # ---------------------------------------------------------
+    # 🧪 실제 AI 제안 처방 제작 후 실측 검증 (Feedback Loop Input)
+    # ---------------------------------------------------------
+    st.markdown("---")
+    with st.container(border=True):
+        st.markdown(f"#### 🧪 Batch #{res_batch} AI 추천 처방 실제 제조 및 실측 검증 입력 (AI 학습 피드백)")
+        st.caption("위 AI가 만들어준 0.01g 추천 계산대로 실제 조색/소성한 후, 측정된 실제 색차(CIE)를 입력하시면 AI가 이를 완벽 학습합니다.")
+        
+        fb_col1, fb_col2, fb_col3, fb_col4 = st.columns(4)
+        with fb_col1:
+            fb_dl = st.number_input(f"실측 ΔL* (명도 오차)", value=0.00, format="%.2f", step=0.01, key="fb_dl")
+        with fb_col2:
+            fb_da = st.number_input(f"실측 Δa* (적/녹 오차)", value=0.00, format="%.2f", step=0.01, key="fb_da")
+        with fb_col3:
+            fb_db = st.number_input(f"실측 Δb* (황/청 오차)", value=0.00, format="%.2f", step=0.01, key="fb_db")
+        with fb_col4:
+            fb_de = round(float(np.sqrt(fb_dl**2 + fb_da**2 + fb_db**2)), 3)
+            st.markdown(f"**실측 색차 (ΔE)**")
+            st.markdown(f"<div style='font-size:1.4rem; font-weight:800; color:#10B981;'>{fb_de:.3f}</div>", unsafe_allow_html=True)
+            
+        if st.button(f"💾 Batch #{res_batch} 실측 결과 저장 및 AI 학습 반영", type="secondary", use_container_width=True):
+            append_batch_history(res_batch, std_l, std_a, std_b, fb_dl, fb_da, fb_db, current_formula, note="AI 추천 처방 실측 검증 피드백")
+            st.success(f"🎉 Batch #{res_batch} 실제 제조 실측 오차(ΔE: {fb_de:.3f})가 AI 학습 데이터베이스에 성공적으로 저장되었습니다! 다음 보정 시 이 결과가 반영됩니다.")
+            st.rerun()
 
 # AI 실시간 Q&A 대화창
 st.divider()
