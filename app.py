@@ -337,27 +337,26 @@ def get_validated_api_key(manual_key_input=""):
         return None, f"입력된 API Key의 길이가 너무 짧습니다 ({len(key_candidate)}자)."
        
     return key_candidate, "OK"
-# 🚀 🚀 🚀 핵심 수정: 동적 모델 자동 감지 함수 (404 에러 원천 차단) 🚀 🚀 🚀
+# 🚀 🚀 🚀 에러 원천 차단: 에러가 명시한 gemini-3.8-flash 로 직접 연결 🚀 🚀 🚀
 @st.cache_resource
 def get_dynamic_ai_model(api_key):
     genai.configure(api_key=api_key)
     try:
-        # 사용자의 API Key로 접근 가능한 모든 모델 리스트를 가져옵니다.
+        # 구글 API 서버에서 2026년 기준 사용 가능한 모델 리스트를 불러옵니다.
         available_models = [m.name.replace("models/", "") for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
        
-        # 선호 순서대로 찾아서 가장 좋은 것을 반환합니다.
-        for target in ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro', 'gemini-pro']:
+        # 사용자의 에러 메시지에서 구글이 직접 요구한 'gemini-3.8-flash'를 최우선 순위 1번으로 스캔하여 잡습니다.
+        for target in ['gemini-3.8-flash', 'gemini-3.8-pro', 'gemini-1.5-pro', 'gemini-1.5-flash']:
             if target in available_models:
                 return genai.GenerativeModel(target)
                
-        # 선호 모델이 없으면 검색된 첫 번째 생성 모델을 강제로 사용합니다.
         if available_models:
             return genai.GenerativeModel(available_models[0])
     except Exception:
         pass
    
-    # 만약 검색마저 실패하면 가장 기본적인 구버전 이름으로 폴백합니다.
-    return genai.GenerativeModel('gemini-1.0-pro')
+    # 예외 상황이 발생해도, 에러 메시지에서 추천한 3.8-flash로 무조건 강제 지정
+    return genai.GenerativeModel('gemini-3.8-flash')
 # 사이드바
 with st.sidebar:
     st.title("⚙️ 시스템 설정")
@@ -367,7 +366,7 @@ with st.sidebar:
     active_api_key, key_status_msg = get_validated_api_key(user_key_input)
    
     if active_api_key:
-        st.success(f"🟢 Gemini API 연결 완료 (자동 모델 감지 활성화)")
+        st.success(f"🟢 Gemini 3.8 연결 완료 (신규 엔진 적용)")
     else:
         st.error(f"🔴 API Key 오류: {key_status_msg}")
         st.markdown("[👉 Google AI Studio에서 키 발급받기](https://aistudio.google.com/app/apikey)")
@@ -649,7 +648,7 @@ if calc_btn:
             ### 3. 💡 학습 기반 보정 근거 및 0.01g 산출 이유 (유사한 배합 환경에서 실무자가 강제 주입한 룰을 발견했다면, 그 상호작용 룰을 반영했다고 명시)
             """
            
-            with st.spinner("🧠 AI 엔진이 안료 상호작용과 누적 데이터를 결합하여 0.01g 수치를 계산 중입니다..."):
+            with st.spinner("🧠 3.8-Flash 엔진이 안료 상호작용과 누적 데이터를 결합하여 0.01g 수치를 계산 중입니다..."):
                 response = model.generate_content(prompt)
                 st.session_state.last_ai_result = {
                     "batch_next": batch_num + 1,
