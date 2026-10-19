@@ -337,6 +337,27 @@ def get_validated_api_key(manual_key_input=""):
         return None, f"입력된 API Key의 길이가 너무 짧습니다 ({len(key_candidate)}자)."
        
     return key_candidate, "OK"
+# 🚀 🚀 🚀 핵심 수정: 동적 모델 자동 감지 함수 (404 에러 원천 차단) 🚀 🚀 🚀
+@st.cache_resource
+def get_dynamic_ai_model(api_key):
+    genai.configure(api_key=api_key)
+    try:
+        # 사용자의 API Key로 접근 가능한 모든 모델 리스트를 가져옵니다.
+        available_models = [m.name.replace("models/", "") for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+       
+        # 선호 순서대로 찾아서 가장 좋은 것을 반환합니다.
+        for target in ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro', 'gemini-pro']:
+            if target in available_models:
+                return genai.GenerativeModel(target)
+               
+        # 선호 모델이 없으면 검색된 첫 번째 생성 모델을 강제로 사용합니다.
+        if available_models:
+            return genai.GenerativeModel(available_models[0])
+    except Exception:
+        pass
+   
+    # 만약 검색마저 실패하면 가장 기본적인 구버전 이름으로 폴백합니다.
+    return genai.GenerativeModel('gemini-1.0-pro')
 # 사이드바
 with st.sidebar:
     st.title("⚙️ 시스템 설정")
@@ -346,7 +367,7 @@ with st.sidebar:
     active_api_key, key_status_msg = get_validated_api_key(user_key_input)
    
     if active_api_key:
-        st.success(f"🟢 Gemini API 연결 완료 (에러 수정됨)")
+        st.success(f"🟢 Gemini API 연결 완료 (자동 모델 감지 활성화)")
     else:
         st.error(f"🔴 API Key 오류: {key_status_msg}")
         st.markdown("[👉 Google AI Studio에서 키 발급받기](https://aistudio.google.com/app/apikey)")
@@ -463,14 +484,13 @@ def render_category(cat_key, cat_title, cat_css_class, cat_desc):
             if st.button("🗑️", key=f"del_{cat_key}_{idx}"):
                 items_to_remove.append(idx)
        
-        # 💡 원료 이름 변경 시 실시간 동적 갱신 (가장 호환성 높은 gemini-pro 적용)
+        # 💡 원료 이름 변경 시 실시간 동적 갱신 (자동 모델 감지 적용)
         if new_name != item["name"]:
             item["name"] = new_name
             item["desc"] = "AI 검색 중..."
             if active_api_key and new_name.strip():
                 try:
-                    genai.configure(api_key=active_api_key)
-                    model_temp = genai.GenerativeModel('gemini-pro')
+                    model_temp = get_dynamic_ai_model(active_api_key)
                     item["desc"] = model_temp.generate_content(f"분체도료 원료 '{new_name}'의 역할을 1줄로 요약해줘.").text.strip()
                 except Exception:
                     item["desc"] = "AI 검색 실패"
@@ -517,8 +537,7 @@ def render_category(cat_key, cat_title, cat_css_class, cat_desc):
                 name_clean = typed_name.strip()
                 if active_api_key:
                     with st.spinner("🧠 AI 역할 분석 중..."):
-                        genai.configure(api_key=active_api_key)
-                        model = genai.GenerativeModel('gemini-pro')
+                        model = get_dynamic_ai_model(active_api_key)
                         res_desc = model.generate_content(f"{EMBEDDED_KNOWLEDGE_SYSTEM_PROMPT}\n원료 '{name_clean}'의 역할을 1문장으로 설명해줘.").text.strip()
                 else:
                     res_desc = "사용자 등록 신규 원료"
@@ -596,8 +615,7 @@ if calc_btn:
             history_context = format_history_for_prompt()
             ai_rules = get_ai_memory_rules()
            
-            genai.configure(api_key=active_api_key)
-            model = genai.GenerativeModel('gemini-pro')
+            model = get_dynamic_ai_model(active_api_key)
             formula_str = "\n".join([f"- {k}: {v:.2f}g" for k, v in current_formula.items()])
            
             prompt = f"""
@@ -631,7 +649,7 @@ if calc_btn:
             ### 3. 💡 학습 기반 보정 근거 및 0.01g 산출 이유 (유사한 배합 환경에서 실무자가 강제 주입한 룰을 발견했다면, 그 상호작용 룰을 반영했다고 명시)
             """
            
-            with st.spinner("🧠 Gemini-Pro 엔진이 안료 상호작용과 누적 데이터를 결합하여 0.01g 수치를 계산 중입니다..."):
+            with st.spinner("🧠 AI 엔진이 안료 상호작용과 누적 데이터를 결합하여 0.01g 수치를 계산 중입니다..."):
                 response = model.generate_content(prompt)
                 st.session_state.last_ai_result = {
                     "batch_next": batch_num + 1,
@@ -688,8 +706,7 @@ with st.container(border=True):
             st.chat_message("user").markdown(user_query)
             st.session_state.chat_history.append({"role": "user", "content": user_query})
             try:
-                genai.configure(api_key=active_api_key)
-                model = genai.GenerativeModel('gemini-pro')
+                model = get_dynamic_ai_model(active_api_key)
                
                 qa_prompt = f"""
                 {EMBEDDED_KNOWLEDGE_SYSTEM_PROMPT}
@@ -735,8 +752,7 @@ with st.container(border=True):
                     f.write(f"- 실무자 관측 룰: {user_feedback.strip()}\n")
                
                 # AI 대답 유도
-                genai.configure(api_key=active_api_key)
-                model = genai.GenerativeModel('gemini-pro')
+                model = get_dynamic_ai_model(active_api_key)
                 reply_prompt = f"너는 조색 AI다. 실무자가 다음 현장 노하우를 주입했다:\n[노하우] {user_feedback}\n이 특정 상황(Context)에서의 안료 상호작용을 완벽히 이해했고, 앞으로 비슷한 상황을 맞닥뜨리면 이 룰을 1순위로 반영하겠다는 대답을 '💡 AI 학습 완료:' 로 시작하는 2~3줄 문장으로 해라."
                 res = model.generate_content(reply_prompt)
                 st.session_state.last_learned_msg = res.text
