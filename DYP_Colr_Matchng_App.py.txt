@@ -1,0 +1,478 @@
+import streamlit as st
+import google.generativeai as genai
+import pandas as pd
+import json
+import os
+
+# 페이지 기본 설정 (와이드 레이아웃 & 커스텀 타이틀)
+st.set_page_config(
+    page_title="DYP주식회사 기술연구소 | AI 초정밀 CCM 조색 시스템",
+    page_icon="🧪",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# 커스텀 CSS (시각적 완성도 및 한글 가독성 강화)
+st.markdown("""
+<style>
+    /* 메인 타이틀 디자인 */
+    .main-header {
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+        padding: 24px 30px;
+        border-radius: 16px;
+        color: #FFFFFF;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .main-header h1 {
+        color: #F8FAFC;
+        font-size: 2.1rem;
+        font-weight: 800;
+        margin: 0 0 6px 0;
+    }
+    .main-header p {
+        color: #94A3B8;
+        font-size: 0.95rem;
+        margin: 0;
+    }
+    
+    /* 뱃지 디자인 */
+    .badge-container {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    .security-badge {
+        background-color: rgba(239, 68, 68, 0.2);
+        color: #FCA5A5;
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    .creator-badge {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: #93C5FD;
+        border: 1px solid rgba(59, 130, 246, 0.4);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    /* 요약 카드 */
+    .total-weight-card {
+        background-color: #F1F5F9;
+        border-left: 5px solid #3B82F6;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-weight: 700;
+        color: #1E293B;
+        font-size: 1.1rem;
+        margin-top: 10px;
+    }
+    
+    /* AI 재료 설명 카드 */
+    .material-info-card {
+        background-color: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-left: 4px solid #10B981;
+        padding: 10px 14px;
+        border-radius: 6px;
+        margin-top: 6px;
+        font-size: 0.88rem;
+        color: #334155;
+    }
+
+    .stButton>button {
+        border-radius: 8px;
+        font-weight: 600;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# 메인 상단 헤더 & 로고 조화로운 레이아웃
+logo_file_path = "logo.png"
+
+col_head_logo, col_head_title = st.columns([1, 4])
+
+with col_head_logo:
+    if os.path.exists(logo_file_path):
+        st.image(logo_file_path, use_container_width=True)
+    else:
+        st.markdown("<div style='text-align:center; padding: 20px; color:#94A3B8; font-weight:bold;'>DYP LOGO</div>", unsafe_allow_html=True)
+
+with col_head_title:
+    st.markdown("""
+    <div class="main-header">
+        <h1>🧪 DYP주식회사 기술연구소 조색프로그램</h1>
+        <p>환경친화형 분체도료 AI 초정밀(0.01g) Color Matching & Real-time Q&A System</p>
+        <div class="badge-container">
+            <span class="security-badge">🔒 영업비밀 엄수 (Confidential)</span>
+            <span class="creator-badge">👤 제작자: 기술연구소 최새한 대리</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+LIBRARY_FILE = "material_library.json"
+HISTORY_FILE = "color_history_dynamic.csv"
+
+# 마스터 라이브러리 기본값
+DEFAULT_LIBRARY = {
+    "cat1": [
+        {"name": "PEP-1681", "desc": "폴리에스터 수지 (주 바인더 수지계)"},
+        {"name": "E-12", "desc": "에폭시 수지 (경화 및 도막 내화학성 부여)"},
+        {"name": "HM3328", "desc": "경화제 및 레벨링 조절 보조제"},
+        {"name": "PE-500", "desc": "고유연성 폴리에스터 수지"},
+        {"name": "EP-101", "desc": "고밀도 에폭시 수지"}
+    ],
+    "cat2": [
+        {"name": "LA-100", "desc": "유동성 향상 및 대전 특성제어 첨가제"},
+        {"name": "BENZOIN", "desc": "도막 소성 시 가스 기포 방출 탈포제"},
+        {"name": "PA-103", "desc": "표면 오렌지필 방지 레벨링 조정제"},
+        {"name": "ACRONAL 4F", "desc": "표면 평활성 향상 흐름제"},
+        {"name": "WAX-50", "desc": "내스크래치성 슬립 첨가제"}
+    ],
+    "cat3": [
+        {"name": "TiO2 R-996", "desc": "이산화티타늄 고은폐 백색 안료 (빛 반사율 제어)"},
+        {"name": "CaCO3", "desc": "탄산칼슘 체질재 (도막 스페이스 및 소광/비용 조절)"},
+        {"name": "BaSO4", "desc": "황산바륨 고광택 체질재"},
+        {"name": "Talc-325", "desc": "탈크 체질재 (소광 및 흐름방지)"}
+    ],
+    "cat4": [
+        {"name": "HI-BLACK 50L (5%)", "desc": "카본블랙 5% 희석 마스터배치 (명도/어두움 제어)"},
+        {"name": "P-261 YELLOW", "desc": "황색 유기 안료 (노란기 b* 축 제어)"},
+        {"name": "RED-107 (5%)", "desc": "적색 안료 5% 희석액 (붉은기 a* 축 미세 보정)"},
+        {"name": "GREEN L8710 (5%)", "desc": "프탈로시아닌 그린 5% 희석액 (녹색기 a* 축 제어)"},
+        {"name": "Phthalo Blue (5%)", "desc": "프탈로시아닌 블루 5% 희석 마스터배치 (푸른기 제어)"},
+        {"name": "Violet 23 (5%)", "desc": "바이올렛 유기안료 5% 희석액 (보라/적청기 조율)"}
+    ]
+}
+
+def load_library():
+    if os.path.exists(LIBRARY_FILE):
+        try:
+            with open(LIBRARY_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return DEFAULT_LIBRARY
+    return DEFAULT_LIBRARY
+
+def save_library(lib_data):
+    with open(LIBRARY_FILE, "w", encoding="utf-8") as f:
+        json.dump(lib_data, f, ensure_ascii=False, indent=2)
+
+if "library" not in st.session_state:
+    st.session_state.library = load_library()
+
+if "materials" not in st.session_state:
+    st.session_state.materials = {
+        "cat1": [
+            {"name": "PEP-1681", "desc": "폴리에스터 수지 (주 바인더 수지계)", "amount": 360.00},
+            {"name": "E-12", "desc": "에폭시 수지 (경화 및 도막 내화학성 부여)", "amount": 240.00},
+            {"name": "HM3328", "desc": "경화제 및 레벨링 조절 보조제", "amount": 14.00}
+        ],
+        "cat2": [
+            {"name": "LA-100", "desc": "유동성 향상 및 대전 특성제어 첨가제", "amount": 10.00},
+            {"name": "BENZOIN", "desc": "도막 소성 시 가스 기포 방출 탈포제", "amount": 3.00},
+            {"name": "PA-103", "desc": "표면 오렌지필 방지 레벨링 조정제", "amount": 3.00}
+        ],
+        "cat3": [
+            {"name": "TiO2 R-996", "desc": "이산화티타늄 고은폐 백색 안료 (빛 반사율 제어)", "amount": 285.00},
+            {"name": "CaCO3", "desc": "탄산칼슘 체질재 (도막 스페이스 및 소광/비용 조절)", "amount": 75.29}
+        ],
+        "cat4": [
+            {"name": "HI-BLACK 50L (5%)", "desc": "카본블랙 5% 희석 마스터배치 (명도/어두움 제어)", "amount": 0.49},
+            {"name": "P-261 YELLOW", "desc": "황색 유기 안료 (노란기 b* 축 제어)", "amount": 6.63},
+            {"name": "RED-107 (5%)", "desc": "적색 안료 5% 희석액 (붉은기 a* 축 미세 보정)", "amount": 1.94},
+            {"name": "GREEN L8710 (5%)", "desc": "프탈로시아닌 그린 5% 희석액 (녹색기 a* 축 제어)", "amount": 0.00}
+        ]
+    }
+
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
+def explain_material_with_ai(mat_name, api_key):
+    if not api_key:
+        return "API Key 미입력 상태 (Gemini API Key 필요)"
+    try:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-pro')
+        prompt = f"""
+        분체도장(Powder Coating) 및 도료 화학 관점에서 원료/안료 '{mat_name}'의 핵심 역할과 특징을 1문장으로 간결하고 전문적으로 설명해줘.
+        """
+        response = model.generate_content(prompt)
+        return response.text.strip().replace("\n", " ")
+    except Exception as e:
+        return f"AI 분석 실패: {e}"
+
+# 사이드바 설정
+with st.sidebar:
+    if os.path.exists(logo_file_path):
+        st.image(logo_file_path, use_container_width=True)
+    
+    st.title("⚙️ 시스템 설정")
+    api_key = st.text_input("🔑 Gemini API Key", type="password")
+    st.markdown("[👉 API Key 무료 발급받기](https://aistudio.google.com/app/apikey)")
+    
+    if api_key:
+        st.success("🟢 AI 실시간 연동 완료 (Pro Engine)")
+    else:
+        st.warning("🔴 API Key를 입력해주세요")
+        
+    st.divider()
+    st.markdown("### 🏢 조직 및 제작자")
+    st.caption("**소속:** DYP주식회사 기술연구소")
+    st.caption("**담당:** 최새한 대리")
+    
+    st.divider()
+    st.markdown("### 🛠️ 데이터 초기화")
+    col_reset1, col_reset2 = st.columns(2)
+    with col_reset1:
+        if st.button("🗑️ 재료 DB 리셋", use_container_width=True):
+            if os.path.exists(LIBRARY_FILE):
+                os.remove(LIBRARY_FILE)
+            st.session_state.library = DEFAULT_LIBRARY
+            st.success("재료 DB가 기본값으로 초기화되었습니다.")
+            st.rerun()
+    with col_reset2:
+        if st.button("💬 Q&A 리셋", use_container_width=True):
+            st.session_state.chat_history = []
+            st.success("대화 내역이 리셋되었습니다.")
+            st.rerun()
+
+# 1. 목표 색상 (STD Target)
+with st.container(border=True):
+    st.markdown("#### 🎯 1. 목표 색상 (STD Target)")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        std_l = st.number_input("STD L* (명도)", value=89.63, format="%.2f")
+    with c2:
+        std_a = st.number_input("STD a* (적/녹)", value=1.32, format="%.2f")
+    with c3:
+        std_b = st.number_input("STD b* (황/청)", value=11.19, format="%.2f")
+
+# 2. 카테고리별 동적 처방 입력
+st.markdown("#### 🧪 2. 카테고리별 전체 처방 설정 (예시 데이터 기본 탑재)")
+
+tab1, tab2, tab3, tab4 = st.tabs([
+    "🏢 [카테고리 1] 수지 & 경화제",
+    "⚡ [카테고리 2] 기능성 첨가제",
+    "⚪ [카테고리 3] 은폐 & 체질 안료",
+    "🎨 [카테고리 4] 유색 착색 안료"
+])
+
+cats = [("cat1", tab1, "수지/경화제"), ("cat2", tab2, "기능성 첨가제"), ("cat3", tab3, "은폐/체질재"), ("cat4", tab4, "유색 착색 안료")]
+current_formula = {}
+
+for cat_key, tab_obj, cat_label in cats:
+    with tab_obj:
+        st.caption(f"이 카테고리({cat_label})의 예시 재료들이 기본 로드되어 있습니다. 추가 시 2가지 방법(기존 DB 선택 또는 직접 타이핑)을 사용할 수 있습니다.")
+        
+        items_to_remove = []
+        for idx, item in enumerate(st.session_state.materials[cat_key]):
+            c_name, c_amt, c_del = st.columns([3, 2, 1])
+            with c_name:
+                item["name"] = st.text_input(f"재료명 #{idx+1}", value=item["name"], key=f"name_{cat_key}_{idx}")
+            with c_amt:
+                item["amount"] = st.number_input(f"투입량(g) #{idx+1}", value=float(item["amount"]), format="%.2f", step=0.01, key=f"amt_{cat_key}_{idx}")
+            with c_del:
+                st.write("")
+                if st.button("🗑️ 삭제", key=f"del_{cat_key}_{idx}"):
+                    items_to_remove.append(idx)
+            
+            st.markdown(f"""
+            <div class="material-info-card">
+                💡 <b>AI 역할 분석:</b> {item.get('desc', 'AI 분석 중...')}
+            </div>
+            """, unsafe_allow_html=True)
+            st.write("")
+            
+            current_formula[item["name"]] = item["amount"]
+            
+        if items_to_remove:
+            for i in sorted(items_to_remove, reverse=True):
+                st.session_state.materials[cat_key].pop(i)
+            st.rerun()
+
+        st.markdown("---")
+        st.markdown(f"##### ➕ 새로운 {cat_label} 재료 추가하기 (2가지 방법)")
+        
+        col_method1, col_method2 = st.columns(2)
+        
+        # 방법 1: 기존 저장된 재료 선택
+        with col_method1:
+            with st.container(border=True):
+                st.markdown("**방법 1. 기존 재료 DB 선택**")
+                lib_items = st.session_state.library.get(cat_key, [])
+                lib_names = [item["name"] for item in lib_items]
+                
+                selected_lib_name = st.selectbox(f"{cat_label} DB 목록", options=["-- 선택하세요 --"] + lib_names, key=f"sel_lib_{cat_key}")
+                init_amt_lib = st.number_input("투입량(g)", value=1.00, format="%.2f", step=0.01, key=f"amt_lib_{cat_key}")
+                
+                if st.button("➕ DB 재료 불러와 추가", key=f"btn_add_lib_{cat_key}", use_container_width=True):
+                    if selected_lib_name != "-- 선택하세요 --":
+                        lib_match = next((x for x in lib_items if x["name"] == selected_lib_name), None)
+                        desc_val = lib_match["desc"] if lib_match else "저장된 원료"
+                        
+                        st.session_state.materials[cat_key].append({
+                            "name": selected_lib_name,
+                            "desc": desc_val,
+                            "amount": init_amt_lib
+                        })
+                        st.success(f"'{selected_lib_name}' 재료가 추가되었습니다!")
+                        st.rerun()
+                    else:
+                        st.warning("목록에서 재료를 선택해주세요.")
+
+        # 방법 2: 신규 재료 직접 타이핑
+        with col_method2:
+            with st.container(border=True):
+                st.markdown("**방법 2. 직접 타이핑 입력 (AI 자동 분석)**")
+                typed_name = st.text_input("신규 재료명 입력", placeholder="예: Phthalo Blue 5%, Wax-100...", key=f"type_name_{cat_key}")
+                init_amt_typed = st.number_input("투입량(g)", value=1.00, format="%.2f", step=0.01, key=f"amt_typed_{cat_key}")
+                
+                if st.button("➕ 직접 입력 재료 추가 & DB 저장", key=f"btn_add_typed_{cat_key}", use_container_width=True):
+                    if typed_name.strip():
+                        name_clean = typed_name.strip()
+                        with st.spinner("🧠 AI가 신규 재료의 역할 및 화학적 특성을 검색/분석 중입니다..."):
+                            ai_desc = explain_material_with_ai(name_clean, api_key)
+                        
+                        st.session_state.materials[cat_key].append({
+                            "name": name_clean,
+                            "desc": ai_desc,
+                            "amount": init_amt_typed
+                        })
+                        
+                        if not any(x["name"] == name_clean for x in st.session_state.library[cat_key]):
+                            st.session_state.library[cat_key].append({
+                                "name": name_clean,
+                                "desc": ai_desc
+                            })
+                            save_library(st.session_state.library)
+                        
+                        st.success(f"'{name_clean}' 재료가 추가되었으며 재료 DB에 영구 저장되었습니다!")
+                        st.rerun()
+                    else:
+                        st.warning("재료명을 입력해주세요.")
+
+# 전체 배합 중량 자동 합산
+total_weight = sum(current_formula.values())
+st.markdown(f"""
+<div class="total-weight-card">
+    ⚖️ 현재 설정된 전체 배합 총중량 ({len(current_formula)}개 재료): <span style="color:#2563EB;">{total_weight:.2f} g</span>
+</div>
+""", unsafe_allow_html=True)
+
+# 3. 차수 및 CIE 오차
+st.divider()
+with st.container(border=True):
+    st.markdown("#### 📐 3. 차수 및 측정 결과 (CIE 오차 Δ)")
+    c_b, c_l, c_a, c_b_axis = st.columns([1, 1, 1, 1])
+    with c_b:
+        batch_num = st.number_input("현재 배치 차수 (Batch No.)", min_value=1, value=8)
+    with c_l:
+        dl = st.number_input("Δ L* (명도 오차)", value=0.28, format="%.2f", step=0.01)
+    with c_a:
+        da = st.number_input("Δ a* (적/녹 오차)", value=-0.15, format="%.2f", step=0.01)
+    with c_b_axis:
+        db = st.number_input("Δ b* (황/청 오차)", value=0.10, format="%.2f", step=0.01)
+
+st.divider()
+calc_btn = st.button("🚀 동적 전체 처방 & AI 초정밀 0.01g 보정 산출", type="primary", use_container_width=True)
+
+if calc_btn:
+    if not api_key:
+        st.error("⚠️ 사이드바에 Gemini API Key를 먼저 입력해 주세요.")
+    else:
+        try:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-1.5-pro')
+
+            formula_str = "\n".join([f"- {k}: {v:.2f}g" for k, v in current_formula.items()])
+
+            prompt = f"""
+            너는 DYP주식회사 기술연구소의 최고급 추론 능력을 가진 초정밀 CCM 안료 보정 AI 전문가야.
+            사용자가 동적으로 설정한 아래의 전체 처방 구조(동적 재료 목록)와 목표 색상(STD), 현재 측정 오차를 종합 분석하여,
+            각 안료/첨가제 성분의 비선형 포화, 은폐/체질재에 따른 Wash-out 효과, 5% 희석 마스터배치 민감도를 반영한 다음 차수({batch_num + 1}번) 0.01g 초정밀 처방을 작성해줘.
+
+            [DYP 기술연구소 보안 주의사항]
+            본 데이터 및 처방 정보는 DYP주식회사 영업비밀에 해당하므로 대외 보안을 준수하여 작성한다.
+
+            [목표 색상 STD]
+            L*: {std_l}, a*: {std_a}, b*: {std_b}
+
+            [현재 사용자가 설정한 동적 처방 구조 (총 {total_weight:.2f}g)]
+            {formula_str}
+
+            [가장 최근 {batch_num}번 측정 오차]
+            - dL: {dl}, da: {da}, db: {db}
+
+            다음 양식으로 가독성 높은 마크다운 형태로 답변해줘:
+            ### 1. 🔍 처방 성분 분석 및 오차 발생 원인
+            (사용자가 설정한 수지, 은폐재, 착색 안료 간의 흡광/산란 물리적 반응 분석)
+
+            ### 2. 🎯 {batch_num + 1}번 0.01g 초정밀 배합 처방
+            (기존에 등록된 동적 재료별 변경량 및 최종 목표 투입g 제시)
+
+            ### 3. 💡 보정 근거 및 0.01g 산출 이유
+            (각 성분 조정량에 대한 화학적/물리적 근거 명확히 제시)
+            """
+
+            with st.spinner("🧠 AI가 동적 처방 및 성분 간 빛 산란 매커니즘을 학습하여 0.01g 처방을 산출 중입니다..."):
+                response = model.generate_content(prompt)
+                st.markdown("---")
+                with st.container(border=True):
+                    st.markdown(f"### 📋 DYP 기술연구소 AI 초정밀 분석 보고서 (Batch #{batch_num + 1})")
+                    st.markdown(response.text)
+
+        except Exception as e:
+            st.error(f"오류가 발생했습니다: {e}")
+
+# AI 실시간 Q&A 대화창
+st.divider()
+with st.container(border=True):
+    st.markdown("#### 💬 DYP AI 실시간 기술 상담 & 대화창 (Gemini Pro Engine)")
+    st.caption("신규 추가한 재료의 특성, 조색 원인, 분체도장 물성 등 자유롭게 질의하세요. (최고 수준 추론 모드)")
+
+    for message in st.session_state.chat_history:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    if user_query := st.chat_input("질문을 입력하세요"):
+        if not api_key:
+            st.error("⚠️ 좌측 사이드바에 Gemini API Key를 먼저 입력해 주세요.")
+        else:
+            st.chat_message("user").markdown(user_query)
+            st.session_state.chat_history.append({"role": "user", "content": user_query})
+
+            try:
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel('gemini-1.5-pro')
+
+                formula_summary = ", ".join([f"{k}({v}g)" for k, v in current_formula.items()])
+
+                system_context = f"""
+                너는 DYP주식회사 기술연구소의 최고 수석 연구원급 AI 분석가야.
+                상대방은 기술연구소 최새한 대리 및 동료 연구원이야.
+                질문자의 의도를 깊이 있게 파악하여 물리 화학적 원리, 분체도장 도막 형성 메커니즘, 안료 입자 분산, 쿠벨카-뭉크 이론, 
+                그리고 파스텔 베이스 Wash-out 효과 등에 기반한 최고 수준의 논리적이고 전문적인 답변(Max Reasoning)을 제공해줘.
+
+                [현재 사용자의 실시간 배합 설정]
+                - STD 타겟: L* {std_l}, a* {std_a}, b* {std_b}
+                - 현재 동적 배합 ({total_weight:.2f}g): {formula_summary}
+                - 현재 오차: dL {dl}, da {da}, db {db}
+
+                질문: {user_query}
+                """
+
+                with st.chat_message("assistant"):
+                    with st.spinner("🧠 최고 사고 수준(Max Reasoning)으로 깊이 있게 분석 중입니다..."):
+                        response = model.generate_content(system_context)
+                        st.markdown(response.text)
+                        st.session_state.chat_history.append({"role": "assistant", "content": response.text})
+
+            except Exception as e:
+                st.error(f"오류가 발생했습니다: {e}")
+
