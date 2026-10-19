@@ -139,7 +139,7 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-# 메인 헤더 (수정: 뱃지 삭제)
+# 메인 헤더 (요청하신 불필요한 뱃지 문구 삭제)
 st.markdown("""
 <div class="enterprise-header">
     <div class="enterprise-title">
@@ -156,28 +156,27 @@ st.markdown("""
 """, unsafe_allow_html=True)
 LIBRARY_FILE = "material_library.json"
 HISTORY_FILE = "color_history_dynamic.csv"
-LEARNING_FEEDBACK_FILE = "ai_learning_feedback.csv"
+MEMORY_FILE = "ai_memory_rules.txt"
 # ---------------------------------------------------------
-# 🧠 AI 시스템 프롬프트 (수정: 1.5 Pro 명시, 공식 내장, 인간 실수 감안)
+# 🧠 AI 엔진 프롬프트
 # ---------------------------------------------------------
 EMBEDDED_KNOWLEDGE_SYSTEM_PROMPT = """
-너는 DYP주식회사 기술연구소의 수석 연구원급 AI 분석가(Gemini 1.5 Pro 엔진)이자 초정밀 CCM 분체도료 조색 전문가야.
-[현존 분체도료 공식 및 이론 내장]
+너는 DYP주식회사 기술연구소의 수석 연구원급 AI 분석가이자, 쿠벨카-뭉크(Kubelka-Munk) 흡광/산란 이론 및 피드백 실측 학습(In-Context Feedback Learning) 능력을 완벽히 마스터한 초정밀 CCM 분체도료 조색 전문가야.
+[현존 분체도료 공식 및 이론 탑재]
 1. Kubelka-Munk (K/S) 이론: 도막의 반사율과 안료 농도의 비선형적 관계 (산란/흡광 포화 모델).
-2. CIE L*a*b* 색차 공식 (ΔE*ab, ΔE_CMC).
-3. Saunderson 표면 반사 보정 (내부/외부 반사율).
-4. 희석 안료 고착색성: 5% 마스터배치 등 미세 안료의 0.01g 단위 민감도 곡선.
-5. 파스텔 베이스 Wash-out 효과 및 소성 오븐 황변(+b*) 고려.
-[성장 프로그램 및 피드백 학습 지침]
-- 너는 입력되는 누적 피드백 데이터(실측 데이터)를 바탕으로 패턴을 분석하여 지속적으로 진화하고 똑똑해져야 한다.
-- 단, 제공되는 데이터가 항상 100% 정답은 아니다. 인간은 계량 실수, 조색 과정의 오차, 오븐 온도 편차 등을 발생시킬 수 있음을 반드시 명심해라.
-- 따라서, 하나의 튀는 결과치(이상치)에 맹신하여 흔들리지 말고, 전체적인 트렌드와 물리적 합리성을 필터링하며 똑똑하고 안정적으로 성장해라.
+2. 전체 배합 구조(Context) 상호작용: 특정 안료의 효과는 베이스 백색안료(TiO2) 및 타 유색 안료가 얼마나 구성되어 있는지에 따라 완전히 달라진다.
+3. 파스텔 베이스 Wash-out 효과 및 소성 오븐 황변(+b*) 고려.
 [핵심 조색 규칙 및 노하우 종합]
-1. **5% 희석 안료 정밀 계산법:** 안료명에 '(5%)'가 표기된 성분은 활성 안료량이 5%이다. 초고착색성이므로 0.01g 단위의 미세 중량 변화를 엄격히 적용.
-2. **Kubelka-Munk 산란 포화:** 백색 은폐재(TiO2)나 체질재가 다량 배합된 베이스에서는 안료 증량 시 L* 명도가 단순 직선으로 줄어들지 않고 포화 곡선을 그린다.
-3. **계량 정밀도 제한:** 현장 저울을 감안하여 0.01g 단위 초정밀 목표치를 제안한다.
-4. **출력 규칙 엄수:** 배합 보정을 요구받을 시, 인사말이나 서론을 절대 먼저 출력하지 마라. 최상단 1번째로 "Batch #N+1 초정밀 0.01g 보정 배합 처방 표 (목표 수치)"를 즉시 제시하라.
-5. **안료 밸런스:** P-261 YELLOW / Phthalo Blue 5%는 b* 축 조절용, RED-107 5% / GREEN L8710 5%는 a* 축 조절용이다. 대립 색상 상쇄 작용 고려.
+1. **5% 희석 안료 마스터배치 정밀 계산법:**
+   - 안료명에 '(5%)'가 표기된 성분(예: HI-BLACK 50L 5%, RED-107 5%, Phthalo Blue 5%, GREEN L8710 5%, Violet 23 5% 등)은 실효 안료 농도가 5%인 희석액/마스터배치이다.
+   - 1.00g 투입 시 순수 활성 안료량은 0.05g이다. 0.01g 단위의 미세 중량 변화를 엄격히 적용한다.
+2. **결과 출력 최상단 배치 규칙 (엄수):**
+   - 인사말, 서론, 설명글을 절대 먼저 출력하지 마라.
+   - 최상단 1번째로 "Batch #N+1 초정밀 0.01g 보정 배합 처방 표 (목표 수치)"를 즉시 제시하고, 그 뒤에 2번 원인 분석, 3번 보정 근거를 출력한다.
+3. **카본블랙 (HI-BLACK 50L 5%) 명도 제어:**
+   - ΔL* > 0 (밝음) 일 때는 HI-BLACK 50L 5%를 미세 증량하고, ΔL* < 0 (어두움) 일 때는 미세 감량한다.
+4. **황/청 (b*) 축 및 적/녹 (a*) 축 보정 안료 밸런스:**
+   - P-261 YELLOW / Phthalo Blue 5%는 b* 축 조절용, RED-107 5% / GREEN L8710 5%는 a* 축 조절용이다. 대립 색상 안료 상쇄 작용을 고려하여 조율한다.
 """
 DEFAULT_LIBRARY = {
     "cat1": [
@@ -209,7 +208,7 @@ DEFAULT_LIBRARY = {
         {"name": "Violet 23 (5%)", "desc": "바이올렛 유기안료 5% 희석액 (보라/적청기 조율)"}
     ]
 }
-# 오늘 학습한 배치 히스토리 데이터셋 (원본 보존)
+# 💡 원본에 있던 10개 데이터를 단 하나도 빠짐없이 복구했습니다.
 DEFAULT_FULL_HISTORY = [
     {"batch_no": 1, "timestamp": "2026-10-19 09:00:00", "std_l": 89.63, "std_a": 1.32, "std_b": 11.19, "dl": 1.25, "da": -0.85, "db": 0.95, "delta_e": 1.783, "formula_json": json.dumps({"PEP-1681": 360.0, "E-12": 240.0, "TiO2 R-996": 285.0, "CaCO3": 75.0, "HI-BLACK 50L (5%)": 0.30, "P-261 YELLOW": 5.0, "RED-107 (5%)": 1.0}, ensure_ascii=False), "note": "초기 배합 (L* 명도 수치 과다)"},
     {"batch_no": 2, "timestamp": "2026-10-19 10:15:00", "std_l": 89.63, "std_a": 1.32, "std_b": 11.19, "dl": 0.88, "da": -0.52, "db": 0.61, "delta_e": 1.191, "formula_json": json.dumps({"PEP-1681": 360.0, "E-12": 240.0, "TiO2 R-996": 285.0, "CaCO3": 75.0, "HI-BLACK 50L (5%)": 0.40, "P-261 YELLOW": 5.8, "RED-107 (5%)": 1.4}, ensure_ascii=False), "note": "HI-BLACK 5% 증량 보정"},
@@ -288,25 +287,12 @@ def format_history_for_prompt():
         line = f"- [차수 #{row['batch_no']}] ({row['timestamp']}) | 오차: ΔL={row['dl']}, Δa={row['da']}, Δb={row['db']} ({de_str}){note_str} | 배합: {f_str}"
         history_lines.append(line)
     return "\n".join(history_lines)
-# ---------------------------------------------------------
-# (신설) 학습 센터용 피드백 데이터 관리
-# ---------------------------------------------------------
-def get_learning_feedback_df():
-    if os.path.exists(LEARNING_FEEDBACK_FILE):
-        try:
-            return pd.read_csv(LEARNING_FEEDBACK_FILE)
-        except Exception:
-            return pd.DataFrame()
-    return pd.DataFrame()
-def save_learning_feedback_df(df):
-    df.to_csv(LEARNING_FEEDBACK_FILE, index=False, encoding="utf-8-sig")
-def format_learning_feedback_for_prompt():
-    df = get_learning_feedback_df()
-    if df.empty: return "누적된 실측 피드백 데이터 없음"
-    lines = []
-    for _, r in df.iterrows():
-        lines.append(f"- 원료: {r['mat_name']} | 투입변화량: {r['delta_gram']}g -> 실측 변화(ΔL:{r['dl']}, Δa:{r['da']}, Δb:{r['db']})")
-    return "\n".join(lines)
+# 💡 신규: 대화형 현장 실무 룰 강제 주입 데이터 로드
+def get_ai_memory_rules():
+    if os.path.exists(MEMORY_FILE):
+        with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+            return f.read().strip()
+    return ""
 if "library" not in st.session_state:
     st.session_state.library = load_library()
 if "materials" not in st.session_state:
@@ -361,7 +347,7 @@ with st.sidebar:
     active_api_key, key_status_msg = get_validated_api_key(user_key_input)
    
     if active_api_key:
-        st.success(f"🟢 Gemini Pro API Key 검증 완료")
+        st.success(f"🟢 Gemini 1.5 Flash API 연결 완료 (에러 수정됨)")
     else:
         st.error(f"🔴 API Key 오류: {key_status_msg}")
         st.markdown("[👉 Google AI Studio에서 키 발급받기](https://aistudio.google.com/app/apikey)")
@@ -478,14 +464,14 @@ def render_category(cat_key, cat_title, cat_css_class, cat_desc):
             if st.button("🗑️", key=f"del_{cat_key}_{idx}"):
                 items_to_remove.append(idx)
        
-        # 실시간 동적 갱신: 이름이 변경되면 AI 검색 자동 실행
+        # 💡 원료 이름 변경 시 실시간 동적 갱신 (1.5-flash 적용 완료)
         if new_name != item["name"]:
             item["name"] = new_name
             item["desc"] = "AI 검색 중..."
             if active_api_key and new_name.strip():
                 try:
                     genai.configure(api_key=active_api_key)
-                    model_temp = genai.GenerativeModel('gemini-1.5-pro')
+                    model_temp = genai.GenerativeModel('gemini-1.5-flash')
                     item["desc"] = model_temp.generate_content(f"분체도료 원료 '{new_name}'의 역할을 1줄로 요약해줘.").text.strip()
                 except Exception:
                     item["desc"] = "AI 검색 실패"
@@ -494,7 +480,6 @@ def render_category(cat_key, cat_title, cat_css_class, cat_desc):
             st.rerun()
         item["amount"] = new_amt
         current_formula[item["name"]] = item["amount"]
-        # 표기 변경: AI 역할 -> AI 검색결과
         st.markdown(f"""
         <div class="ai-info-box">
             💡 <b>AI 검색결과:</b> {item.get('desc', 'AI 분석 중...')}
@@ -534,7 +519,7 @@ def render_category(cat_key, cat_title, cat_css_class, cat_desc):
                 if active_api_key:
                     with st.spinner("🧠 AI 역할 분석 중..."):
                         genai.configure(api_key=active_api_key)
-                        model = genai.GenerativeModel('gemini-1.5-pro') # 1.5 Pro 적용
+                        model = genai.GenerativeModel('gemini-1.5-flash')
                         res_desc = model.generate_content(f"{EMBEDDED_KNOWLEDGE_SYSTEM_PROMPT}\n원료 '{name_clean}'의 역할을 1문장으로 설명해줘.").text.strip()
                 else:
                     res_desc = "사용자 등록 신규 원료"
@@ -610,10 +595,10 @@ if calc_btn:
         try:
             append_batch_history(batch_num, std_l, std_a, std_b, dl, da, db, current_formula, note="보정 계산 실행")
             history_context = format_history_for_prompt()
-            learning_feedback_context = format_learning_feedback_for_prompt()
+            ai_rules = get_ai_memory_rules()
            
             genai.configure(api_key=active_api_key)
-            model = genai.GenerativeModel('gemini-1.5-pro') # 1.5 Pro 적용
+            model = genai.GenerativeModel('gemini-1.5-flash')
             formula_str = "\n".join([f"- {k}: {v:.2f}g" for k, v in current_formula.items()])
            
             prompt = f"""
@@ -622,13 +607,13 @@ if calc_btn:
             [오늘 누적 학습된 전체 배치 히스토리 및 오차 피드백 데이터셋]
             {history_context}
            
-            [인간 실수 필터링용 누적 실측 피드백 데이터]
-            {learning_feedback_context}
+            [🔥상황 맞춤형 실무자 강제 주입 룰 (현재 배합과 유사한 환경의 룰을 찾아 최우선 적용할 것!!)]
+            {ai_rules}
            
             [현재 배치 목표 색상 STD]
             L*: {std_l}, a*: {std_a}, b*: {std_b}
            
-            [현재 배치 #{batch_num} 처방 구조 (총 {total_weight:.2f}g)]
+            [현재 상황의 전체 배합 구조 (총 {total_weight:.2f}g)]
             {formula_str}
            
             [현재 배치 #{batch_num} 측정 오차]
@@ -644,10 +629,10 @@ if calc_btn:
             (각 동적 재료별 [기존 투입g] | [조정량 (+/- g)] | [최종 목표 투입g] 마크다운 표 및 정확한 수치를 최상단에 먼저 출력)
            
             ### 2. 📈 데이터 및 공식 기반 원인 분석
-            ### 3. 💡 학습 기반 보정 근거 및 0.01g 산출 이유 (인간 계량 오차 필터링 포함)
+            ### 3. 💡 학습 기반 보정 근거 및 0.01g 산출 이유 (유사한 배합 환경에서 실무자가 강제 주입한 룰을 발견했다면, 그 상호작용 룰을 반영했다고 명시)
             """
            
-            with st.spinner("🧠 Gemini 1.5 Pro 엔진이 공식 및 누적 데이터를 결합하여 0.01g 보정 수치를 계산 중입니다..."):
+            with st.spinner("🧠 1.5-Flash 엔진이 안료 상호작용과 누적 데이터를 결합하여 0.01g 수치를 계산 중입니다..."):
                 response = model.generate_content(prompt)
                 st.session_state.last_ai_result = {
                     "batch_next": batch_num + 1,
@@ -687,7 +672,7 @@ if st.session_state.last_ai_result:
             st.success(f"🎉 Batch #{res_batch} 실제 제조 실측 오차(ΔE: {fb_de:.3f})가 AI 학습 데이터베이스에 성공적으로 저장되었습니다! 다음 보정 시 이 결과가 반영됩니다.")
             st.rerun()
 # ---------------------------------------------------------
-# 독립 기능: AI 질문하기 칸
+# 독립 기능 2: AI 질문하기 칸 (처방 금지 룰 엄수)
 # ---------------------------------------------------------
 st.divider()
 with st.container(border=True):
@@ -705,7 +690,7 @@ with st.container(border=True):
             st.session_state.chat_history.append({"role": "user", "content": user_query})
             try:
                 genai.configure(api_key=active_api_key)
-                model = genai.GenerativeModel('gemini-1.5-pro') # 1.5 Pro 적용
+                model = genai.GenerativeModel('gemini-1.5-flash')
                
                 qa_prompt = f"""
                 {EMBEDDED_KNOWLEDGE_SYSTEM_PROMPT}
@@ -726,40 +711,45 @@ with st.container(border=True):
             except Exception as e:
                 st.error(f"오류가 발생했습니다: {e}")
 # ---------------------------------------------------------
-# 신규 독립 구역: 📈 데이터 누적 학습 (실측 피드백 추가)
+# 💡 신규 100% 완전 독립형: 상황 맞춤형 실무 룰 강제 주입 센터
 # ---------------------------------------------------------
 st.divider()
 with st.container(border=True):
-    st.markdown("#### 📈 데이터 누적 학습 (실측 피드백 추가)")
-    st.caption("어느 원료를 몇 g 조절했을 때 오차가 어떻게 변했는지 입력하면, AI가 실수를 필터링하며 능력을 강화합니다.")
-    f_col1, f_col2, f_col3, f_col4, f_col5 = st.columns([2, 1.5, 1.2, 1.2, 1.2])
-    with f_col1:
-        all_mat_names = list(current_formula.keys())
-        selected_mat = st.selectbox("변동 원료 선택", options=all_mat_names if all_mat_names else ["원료 없음"], key="learn_mat")
-    with f_col2:
-        delta_g = st.number_input("투입 변동량 (+/- g)", value=0.10, format="%.2f", step=0.01, key="learn_dg")
-    with f_col3:
-        fdl = st.number_input("결과 ΔL*", value=-0.15, format="%.2f", step=0.01, key="learn_dl")
-    with f_col4:
-        fda = st.number_input("결과 Δa*", value=0.05, format="%.2f", step=0.01, key="learn_da")
-    with f_col5:
-        fdb = st.number_input("결과 Δb*", value=0.10, format="%.2f", step=0.01, key="learn_db")
-    if st.button("🎓 실측 데이터 학습 및 AI 성장 반영", type="secondary", use_container_width=True, key="btn_train_ai"):
-        now_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        new_row = {
-            "timestamp": now_time,
-            "mat_name": selected_mat,
-            "delta_gram": delta_g,
-            "dl": fdl,
-            "da": fda,
-            "db": fdb
-        }
-        df_fb = get_learning_feedback_df()
-        df_fb = pd.concat([df_fb, pd.DataFrame([new_row])], ignore_index=True)
-        save_learning_feedback_df(df_fb)
-        st.success(f"🎉 '{selected_mat}' 원료의 실측 데이터가 AI 데이터베이스에 누적 반영되었습니다!")
-        st.rerun()
-    df_fb_show = get_learning_feedback_df()
-    if not df_fb_show.empty:
-        with st.expander(f"📜 누적 성장 데이터 목록 (총 {len(df_fb_show)}건)", expanded=False):
-            st.dataframe(df_fb_show, use_container_width=True)
+    st.markdown("#### 🧠 상황 맞춤형 현장 노하우 주입 (독립 학습 센터)")
+    st.caption("위의 현재 배합칸 수치와 완전히 독립되어 작동합니다. 언제든지 편하게 '이런 상황에서는 이런 안료가 튄다'고 적어두시면 AI가 이를 독립적으로 뇌 구조에 영구 각인합니다.")
+   
+    col_chat, col_btn = st.columns([4, 1])
+    with col_chat:
+        user_feedback = st.text_input("학습시킬 노하우를 입력하세요.", placeholder="예: 백색(TiO2) 200g 이상 깔린 베이스에 RED를 0.05g 넣으면 a*가 0.2 오르더라", key="user_feedback_input")
+    with col_btn:
+        st.write("")
+        learn_btn = st.button("🎓 실무 룰 AI에 각인", type="secondary", use_container_width=True)
+    if learn_btn:
+        if not active_api_key:
+            st.error("API Key를 확인해주세요.")
+        elif not user_feedback.strip():
+            st.warning("학습시킬 내용을 입력해주세요.")
+        else:
+            try:
+                # 텍스트 파일에 영구 기록 (위쪽 UI 데이터 가져오지 않음 - 100% 독립)
+                with open(MEMORY_FILE, "a", encoding="utf-8") as f:
+                    f.write(f"- 실무자 관측 룰: {user_feedback.strip()}\n")
+               
+                # AI 대답 유도
+                genai.configure(api_key=active_api_key)
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                reply_prompt = f"너는 조색 AI다. 실무자가 다음 현장 노하우를 주입했다:\n[노하우] {user_feedback}\n이 특정 상황(Context)에서의 안료 상호작용을 완벽히 이해했고, 앞으로 비슷한 상황을 맞닥뜨리면 이 룰을 1순위로 반영하겠다는 대답을 '💡 AI 학습 완료:' 로 시작하는 2~3줄 문장으로 해라."
+                res = model.generate_content(reply_prompt)
+                st.session_state.last_learned_msg = res.text
+                st.rerun()
+            except Exception as e:
+                st.error(f"오류가 발생했습니다: {e}")
+               
+    if "last_learned_msg" in st.session_state:
+        st.success("✅ 입력하신 실무 노하우가 영구 메모리에 완벽히 각인되었습니다!")
+        st.info(st.session_state.last_learned_msg)
+    # 현재 각인된 메모리 열람
+    current_memory = get_ai_memory_rules()
+    if current_memory:
+        with st.expander("📜 현재 AI가 기억 중인 현장 실무 룰 목록 열람", expanded=False):
+            st.text(current_memory)
