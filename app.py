@@ -128,7 +128,6 @@ st.markdown("""
         font-weight: 800;
         color: #1E293B;
     }
-
     .stButton > button {
         border-radius: 6px !important;
         font-weight: 700 !important;
@@ -241,7 +240,7 @@ def explain_material_with_ai(mat_name, api_key):
         return "API Key 미입력 상태 (Gemini API Key 필요)"
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-3.8-flash')
         prompt = f"""
         분체도장(Powder Coating) 및 도료 화학 관점에서 원료/안료 '{mat_name}'의 핵심 역할과 특징을 1문장으로 간결하고 전문적으로 설명해줘.
         """
@@ -424,7 +423,7 @@ if calc_btn:
     else:
         try:
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-2.5-flash')
+            model = genai.GenerativeModel('gemini-3.8-flash')
 
             formula_str = "\n".join([f"- {k}: {v:.2f}g" for k, v in current_formula.items()])
 
@@ -485,7 +484,7 @@ with st.container(border=True):
 
             try:
                 genai.configure(api_key=api_key)
-                model = genai.GenerativeModel('gemini-2.5-flash')
+                model = genai.GenerativeModel('gemini-3.8-flash')
 
                 formula_summary = ", ".join([f"{k}({v}g)" for k, v in current_formula.items()])
 
