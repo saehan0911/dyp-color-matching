@@ -5,6 +5,7 @@ import numpy as np
 import json
 import os
 from datetime import datetime
+
 # ---------------------------------------------------------
 # 1. 페이지 기본 설정
 # ---------------------------------------------------------
@@ -14,6 +15,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
 # ---------------------------------------------------------
 # 2. 커스텀 CSS (슬레이트/블루 대시보드 테마)
 # ---------------------------------------------------------
@@ -139,6 +141,7 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
 # 메인 헤더
 st.markdown("""
 <div class="enterprise-header">
@@ -154,18 +157,22 @@ st.markdown("""
     </div>
 </div>
 """, unsafe_allow_html=True)
+
 LIBRARY_FILE = "material_library.json"
 HISTORY_FILE = "color_history_dynamic.csv"
 MEMORY_FILE = "ai_memory_rules.txt"
+
 # ---------------------------------------------------------
-# 🧠 AI 엔진 프롬프트
+# 🧠 AI 엔진 프롬프트 
 # ---------------------------------------------------------
 EMBEDDED_KNOWLEDGE_SYSTEM_PROMPT = """
 너는 DYP주식회사 기술연구소의 수석 연구원급 AI 분석가이자, 쿠벨카-뭉크(Kubelka-Munk) 흡광/산란 이론 및 피드백 실측 학습(In-Context Feedback Learning) 능력을 완벽히 마스터한 초정밀 CCM 분체도료 조색 전문가야.
+
 [현존 분체도료 공식 및 이론 탑재]
 1. Kubelka-Munk (K/S) 이론: 도막의 반사율과 안료 농도의 비선형적 관계 (산란/흡광 포화 모델).
 2. 전체 배합 구조(Context) 상호작용: 특정 안료의 효과는 베이스 백색안료(TiO2) 및 타 유색 안료가 얼마나 구성되어 있는지에 따라 완전히 달라진다.
 3. 파스텔 베이스 Wash-out 효과 및 소성 오븐 황변(+b*) 고려.
+
 [핵심 조색 규칙 및 노하우 종합]
 1. **5% 희석 안료 마스터배치 정밀 계산법:**
    - 안료명에 '(5%)'가 표기된 성분(예: HI-BLACK 50L 5%, RED-107 5%, Phthalo Blue 5%, GREEN L8710 5%, Violet 23 5% 등)은 실효 안료 농도가 5%인 희석액/마스터배치이다.
@@ -178,6 +185,7 @@ EMBEDDED_KNOWLEDGE_SYSTEM_PROMPT = """
 4. **황/청 (b*) 축 및 적/녹 (a*) 축 보정 안료 밸런스:**
    - P-261 YELLOW / Phthalo Blue 5%는 b* 축 조절용, RED-107 5% / GREEN L8710 5%는 a* 축 조절용이다. 대립 색상 안료 상쇄 작용을 고려하여 조율한다.
 """
+
 DEFAULT_LIBRARY = {
     "cat1": [
         {"name": "PEP-1681", "desc": "폴리에스터 수지 (주 바인더 수지계)"},
@@ -208,6 +216,7 @@ DEFAULT_LIBRARY = {
         {"name": "Violet 23 (5%)", "desc": "바이올렛 유기안료 5% 희석액 (보라/적청기 조율)"}
     ]
 }
+
 DEFAULT_FULL_HISTORY = [
     {"batch_no": 1, "timestamp": "2026-10-19 09:00:00", "std_l": 89.63, "std_a": 1.32, "std_b": 11.19, "dl": 1.25, "da": -0.85, "db": 0.95, "delta_e": 1.783, "formula_json": json.dumps({"PEP-1681": 360.0, "E-12": 240.0, "TiO2 R-996": 285.0, "CaCO3": 75.0, "HI-BLACK 50L (5%)": 0.30, "P-261 YELLOW": 5.0, "RED-107 (5%)": 1.0}, ensure_ascii=False), "note": "초기 배합 (L* 명도 수치 과다)"},
     {"batch_no": 2, "timestamp": "2026-10-19 10:15:00", "std_l": 89.63, "std_a": 1.32, "std_b": 11.19, "dl": 0.88, "da": -0.52, "db": 0.61, "delta_e": 1.191, "formula_json": json.dumps({"PEP-1681": 360.0, "E-12": 240.0, "TiO2 R-996": 285.0, "CaCO3": 75.0, "HI-BLACK 50L (5%)": 0.40, "P-261 YELLOW": 5.8, "RED-107 (5%)": 1.4}, ensure_ascii=False), "note": "HI-BLACK 5% 증량 보정"},
@@ -220,6 +229,7 @@ DEFAULT_FULL_HISTORY = [
     {"batch_no": 9, "timestamp": "2026-10-19 18:40:00", "std_l": 89.63, "std_a": 1.32, "std_b": 11.19, "dl": 0.14, "da": -0.06, "db": 0.05, "delta_e": 0.160, "formula_json": json.dumps({"PEP-1681": 360.0, "E-12": 240.0, "TiO2 R-996": 285.0, "CaCO3": 75.31, "HI-BLACK 50L (5%)": 0.495, "P-261 YELLOW": 6.66, "RED-107 (5%)": 1.96}, ensure_ascii=False), "note": "초정밀 0.01g 영역 수렴"},
     {"batch_no": 10, "timestamp": "2026-10-19 19:50:00", "std_l": 89.63, "std_a": 1.32, "std_b": 11.19, "dl": 0.08, "da": -0.03, "db": 0.02, "delta_e": 0.088, "formula_json": json.dumps({"PEP-1681": 360.0, "E-12": 240.0, "TiO2 R-996": 285.0, "CaCO3": 75.32, "HI-BLACK 50L (5%)": 0.498, "P-261 YELLOW": 6.67, "RED-107 (5%)": 1.97}, ensure_ascii=False), "note": "최종 색차 ΔE=0.088 완성"}
 ]
+
 def load_library():
     if os.path.exists(LIBRARY_FILE):
         try:
@@ -228,9 +238,11 @@ def load_library():
         except Exception:
             return DEFAULT_LIBRARY
     return DEFAULT_LIBRARY
+
 def save_library(lib_data):
     with open(LIBRARY_FILE, "w", encoding="utf-8") as f:
         json.dump(lib_data, f, ensure_ascii=False, indent=2)
+
 def get_batch_history_df():
     if os.path.exists(HISTORY_FILE):
         try:
@@ -246,8 +258,10 @@ def get_batch_history_df():
         df_default = pd.DataFrame(DEFAULT_FULL_HISTORY)
         df_default.to_csv(HISTORY_FILE, index=False, encoding="utf-8-sig")
         return df_default
+
 def save_batch_history_df(df):
     df.to_csv(HISTORY_FILE, index=False, encoding="utf-8-sig")
+
 def append_batch_history(batch_no, std_l, std_a, std_b, dl, da, db, formula_dict, note="보정 계산 실행"):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     delta_e = round(float(np.sqrt(dl**2 + da**2 + db**2)), 3)
@@ -268,6 +282,7 @@ def append_batch_history(batch_no, std_l, std_a, std_b, dl, da, db, formula_dict
     df_existing = get_batch_history_df()
     df_combined = pd.concat([df_existing, df_new], ignore_index=True)
     save_batch_history_df(df_combined)
+
 def format_history_for_prompt():
     df = get_batch_history_df()
     if df.empty:
@@ -286,14 +301,17 @@ def format_history_for_prompt():
         line = f"- [차수 #{row['batch_no']}] ({row['timestamp']}) | 오차: ΔL={row['dl']}, Δa={row['da']}, Δb={row['db']} ({de_str}){note_str} | 배합: {f_str}"
         history_lines.append(line)
     return "\n".join(history_lines)
+
 # 💡 신규: 대화형 현장 실무 룰 강제 주입 데이터 로드
 def get_ai_memory_rules():
     if os.path.exists(MEMORY_FILE):
         with open(MEMORY_FILE, "r", encoding="utf-8") as f:
             return f.read().strip()
     return ""
+
 if "library" not in st.session_state:
     st.session_state.library = load_library()
+
 if "materials" not in st.session_state:
     st.session_state.materials = {
         "cat1": [
@@ -312,13 +330,15 @@ if "materials" not in st.session_state:
         ],
         "cat4": [
             {"name": "HI-BLACK 50L (5%)", "desc": "카본블랙 5% 희석 마스터배치 (명도/어두움 제어)", "amount": 0.50},
-            {"name": "P-261 YELLOW", "desc": "황색 유기 안료 (노란기 b* 축 제어)", "amount": 6.67},
+            {"name": "P-261 YELLOW", "desc": "황색 유기 안료 (노란기 b* 축 제er)", "amount": 6.67},
             {"name": "RED-107 (5%)", "desc": "적색 안료 5% 희석액 (붉은기 a* 축 미세 보정)", "amount": 1.97},
             {"name": "GREEN L8710 (5%)", "desc": "프탈로시아닌 그린 5% 희석액 (녹색기 a* 축 제어)", "amount": 0.00}
         ]
     }
+
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
+
 # ---------------------------------------------------------
 # 🔑 유연한 API Key 검증 로직
 # ---------------------------------------------------------
@@ -337,26 +357,29 @@ def get_validated_api_key(manual_key_input=""):
         return None, f"입력된 API Key의 길이가 너무 짧습니다 ({len(key_candidate)}자)."
        
     return key_candidate, "OK"
+
 # 🚀 🚀 🚀 에러 원천 차단: 에러가 명시한 gemini-3.8-flash 로 직접 연결 🚀 🚀 🚀
 @st.cache_resource
 def get_dynamic_ai_model(api_key):
     genai.configure(api_key=api_key)
     try:
-        # 구글 API 서버에서 2026년 기준 사용 가능한 모델 리스트를 불러옵니다.
+        # 구글 API 서버에서 사용 가능한 모델 리스트를 불러옵니다.
         available_models = [m.name.replace("models/", "") for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-       
+        
         # 사용자의 에러 메시지에서 구글이 직접 요구한 'gemini-3.8-flash'를 최우선 순위 1번으로 스캔하여 잡습니다.
         for target in ['gemini-3.8-flash', 'gemini-3.8-pro', 'gemini-1.5-pro', 'gemini-1.5-flash']:
             if target in available_models:
                 return genai.GenerativeModel(target)
-               
+                
         if available_models:
             return genai.GenerativeModel(available_models[0])
     except Exception:
         pass
-   
+    
     # 예외 상황이 발생해도, 에러 메시지에서 추천한 3.8-flash로 무조건 강제 지정
     return genai.GenerativeModel('gemini-3.8-flash')
+
+
 # 사이드바
 with st.sidebar:
     st.title("⚙️ 시스템 설정")
@@ -376,6 +399,7 @@ with st.sidebar:
     st.caption("**소속:** DYP주식회사 기술연구소")
     st.caption("**담당:** 최새한 대리")
     st.divider()
+
 # ---------------------------------------------------------
 # 📂 데이터 열람 & 개별 삭제 관리 섹션
 # ---------------------------------------------------------
@@ -436,6 +460,7 @@ with st.sidebar.expander("📂 데이터 열람 & 개별 삭제 관리", expande
                         st.session_state.chat_history.pop(q_idx)
                     st.toast("Q&A 항목 삭제 완료!")
                     st.rerun()
+
 # ---------------------------------------------------------
 # 🧠 AI 학습 관리 칸 (AI Learning Dashboard)
 # ---------------------------------------------------------
@@ -455,6 +480,7 @@ with st.sidebar.expander("🧠 AI 학습 관리 & 오차 수렴 현황", expande
        
         csv_bytes = df_learn.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
         st.download_button("📥 누적 학습 데이터 (CSV) 다운로드", data=csv_bytes, file_name="DYP_AI_Learning_History.csv", mime="text/csv", use_container_width=True)
+
 # 1. 목표 색상 (STD Target)
 with st.container(border=True):
     st.markdown("#### 🎯 1. 목표 색상 (STD Target)")
@@ -465,8 +491,10 @@ with st.container(border=True):
         std_a = st.number_input("STD a* (적/녹)", value=1.32, format="%.2f")
     with c3:
         std_b = st.number_input("STD b* (황/청)", value=11.19, format="%.2f")
+
 # 2. 전체 배합 (2x2 그리드)
 current_formula = {}
+
 def render_category(cat_key, cat_title, cat_css_class, cat_desc):
     st.markdown(f'<div class="cat-header {cat_css_class}"><span>{cat_title}</span></div>', unsafe_allow_html=True)
     st.caption(cat_desc)
@@ -496,8 +524,10 @@ def render_category(cat_key, cat_title, cat_css_class, cat_desc):
             else:
                 item["desc"] = "설명 없음"
             st.rerun()
+
         item["amount"] = new_amt
         current_formula[item["name"]] = item["amount"]
+
         st.markdown(f"""
         <div class="ai-info-box">
             💡 <b>AI 검색결과:</b> {item.get('desc', 'AI 분석 중...')}
@@ -508,6 +538,7 @@ def render_category(cat_key, cat_title, cat_css_class, cat_desc):
         for i in sorted(items_to_remove, reverse=True):
             st.session_state.materials[cat_key].pop(i)
         st.rerun()
+
     cat_short = cat_title.split(']')[1] if ']' in cat_title else cat_title
     with st.expander(f"➕ {cat_short} 재료 추가", expanded=False):
         st.markdown("**방법 1. 기존 DB 선택**")
@@ -528,6 +559,7 @@ def render_category(cat_key, cat_title, cat_css_class, cat_desc):
                 st.rerun()
             else:
                 st.warning("목록에서 재료를 선택해주세요.")
+
         st.markdown("**방법 2. 직접 입력 (AI 분석)**")
         typed_name = st.text_input(f"신규 {cat_short} 재료명", placeholder="예: Phthalo Blue 5%...", key=f"type_name_{cat_key}")
         init_amt_typed = st.number_input("투입량(g)", value=1.00, format="%.2f", step=0.01, key=f"amt_typed_{cat_key}")
@@ -558,6 +590,7 @@ def render_category(cat_key, cat_title, cat_css_class, cat_desc):
                 st.rerun()
             else:
                 st.warning("재료명을 입력해주세요.")
+
 with st.container(border=True):
     st.markdown("#### 🧪 2. 전체 배합")
    
@@ -574,6 +607,7 @@ with st.container(border=True):
         render_category("cat3", "⚪ [카테고리 3] 은폐 & 체질 안료", "cat-3-bg", "은폐력, 은폐층 형성 및 물성 조절 성분")
     with col_row2_2:
         render_category("cat4", "🎨 [카테고리 4] 유색 착색 안료", "cat-4-bg", "L*, a*, b* 색상 미세 조율용 안료")
+
 total_weight = sum(current_formula.values())
 st.markdown(f"""
 <div class="kpi-container">
@@ -584,6 +618,7 @@ st.markdown(f"""
     <div class="kpi-val" style="color:#2563EB;">{total_weight:.2f} <span style="font-size:1.1rem; color:#64748B;">g</span></div>
 </div>
 """, unsafe_allow_html=True)
+
 # 3. 차수 및 CIE 오차
 with st.container(border=True):
     st.markdown("#### 📐 3. 차수 및 측정 결과 (CIE 오차 Δ)")
@@ -600,11 +635,15 @@ with st.container(border=True):
         curr_de = round(float(np.sqrt(dl**2 + da**2 + db**2)), 3)
         st.markdown(f"**자동 산출 색차 (ΔE)**")
         st.markdown(f"<div style='font-size:1.4rem; font-weight:800; color:#D97706;'>{curr_de:.3f}</div>", unsafe_allow_html=True)
+
 st.divider()
+
 # 독립 버튼 1: 처방 보정 연산
 calc_btn = st.button("🚀 동적 전체 처방 & AI 초정밀 0.01g 보정 산출", type="primary", use_container_width=True)
+
 if "last_ai_result" not in st.session_state:
     st.session_state.last_ai_result = None
+
 if calc_btn:
     if not active_api_key:
         st.error(f"⚠️ {key_status_msg}")
@@ -612,42 +651,42 @@ if calc_btn:
         try:
             append_batch_history(batch_num, std_l, std_a, std_b, dl, da, db, current_formula, note="보정 계산 실행")
             history_context = format_history_for_prompt()
-            ai_rules = get_ai_memory_rules()
-           
-            model = get_dynamic_ai_model(active_api_key)
+            ai_rules = get_ai_memory_rules() 
+            
+            model = get_dynamic_ai_model(active_api_key) 
             formula_str = "\n".join([f"- {k}: {v:.2f}g" for k, v in current_formula.items()])
-           
+            
             prompt = f"""
             {EMBEDDED_KNOWLEDGE_SYSTEM_PROMPT}
-           
+            
             [오늘 누적 학습된 전체 배치 히스토리 및 오차 피드백 데이터셋]
             {history_context}
-           
+            
             [🔥상황 맞춤형 실무자 강제 주입 룰 (현재 배합과 유사한 환경의 룰을 찾아 최우선 적용할 것!!)]
             {ai_rules}
-           
+            
             [현재 배치 목표 색상 STD]
             L*: {std_l}, a*: {std_a}, b*: {std_b}
-           
+            
             [현재 상황의 전체 배합 구조 (총 {total_weight:.2f}g)]
             {formula_str}
-           
+            
             [현재 배치 #{batch_num} 측정 오차]
             - ΔL*: {dl}
             - Δa*: {da}
             - Δb*: {db}
             - ΔE: {curr_de}
-           
+            
             [출력 작성 규칙 - 최우선 순서 엄수!]
             반드시 1번(0.01g 보정 배합 표 및 목표 수치)을 최상단에 가장 먼저 출력한 후, 2번 원인 분석, 3번 보정 근거를 출력하라. 인사말이나 서론은 절대로 출력하지 말 것.
-           
+            
             ### 1. 🎯 Batch #{batch_num + 1} 초정밀 0.01g 보정 배합 처방 (최종 목표 값)
             (각 동적 재료별 [기존 투입g] | [조정량 (+/- g)] | [최종 목표 투입g] 마크다운 표 및 정확한 수치를 최상단에 먼저 출력)
-           
+            
             ### 2. 📈 데이터 및 공식 기반 원인 분석
             ### 3. 💡 학습 기반 보정 근거 및 0.01g 산출 이유 (유사한 배합 환경에서 실무자가 강제 주입한 룰을 발견했다면, 그 상호작용 룰을 반영했다고 명시)
             """
-           
+            
             with st.spinner("🧠 3.8-Flash 엔진이 안료 상호작용과 누적 데이터를 결합하여 0.01g 수치를 계산 중입니다..."):
                 response = model.generate_content(prompt)
                 st.session_state.last_ai_result = {
@@ -657,6 +696,7 @@ if calc_btn:
                 st.success("✅ 초정밀 0.01g 보정 수치 계산이 완료되었습니다!")
         except Exception as e:
             st.error(f"오류가 발생했습니다: {e}")
+
 # ---------------------------------------------------------
 # 보정 산출 결과 출력 (수치 표 최상단 출력)
 # ---------------------------------------------------------
@@ -687,6 +727,7 @@ if st.session_state.last_ai_result:
             append_batch_history(res_batch, std_l, std_a, std_b, fb_dl, fb_da, fb_db, current_formula, note="AI 추천 처방 실측 검증 피드백")
             st.success(f"🎉 Batch #{res_batch} 실제 제조 실측 오차(ΔE: {fb_de:.3f})가 AI 학습 데이터베이스에 성공적으로 저장되었습니다! 다음 보정 시 이 결과가 반영됩니다.")
             st.rerun()
+
 # ---------------------------------------------------------
 # 독립 기능 2: AI 질문하기 칸 (처방 금지 룰 엄수)
 # ---------------------------------------------------------
@@ -697,7 +738,7 @@ with st.container(border=True):
     for message in st.session_state.chat_history:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-           
+            
     if user_query := st.chat_input("원료 특성, 소성 조건, 화학 반응 등 자유롭게 질의하세요."):
         if not active_api_key:
             st.error(f"⚠️ {key_status_msg}")
@@ -706,18 +747,18 @@ with st.container(border=True):
             st.session_state.chat_history.append({"role": "user", "content": user_query})
             try:
                 model = get_dynamic_ai_model(active_api_key)
-               
+                
                 qa_prompt = f"""
                 {EMBEDDED_KNOWLEDGE_SYSTEM_PROMPT}
-               
+                
                 [사용자 질문]
                 {user_query}
-               
+                
                 [주의사항 - 엄격하게 지킬 것]
                 너는 오직 사용자의 질문에 대한 이론적/실무적 답변만 제공해야 한다.
                 배합 처방표를 만들거나 0.01g 계량을 뜬금없이 제시하는 행위를 절대 금지한다.
                 """
-               
+                
                 with st.chat_message("assistant"):
                     with st.spinner("🧠 질문에 대한 답변을 작성 중입니다..."):
                         response = model.generate_content(qa_prompt)
@@ -725,6 +766,7 @@ with st.container(border=True):
                         st.session_state.chat_history.append({"role": "assistant", "content": response.text})
             except Exception as e:
                 st.error(f"오류가 발생했습니다: {e}")
+
 # ---------------------------------------------------------
 # 💡 신규 100% 완전 독립형: 상황 맞춤형 실무 룰 강제 주입 센터
 # ---------------------------------------------------------
@@ -732,13 +774,14 @@ st.divider()
 with st.container(border=True):
     st.markdown("#### 🧠 상황 맞춤형 현장 노하우 주입 (독립 학습 센터)")
     st.caption("위의 현재 배합칸 수치와 완전히 독립되어 작동합니다. 언제든지 편하게 '이런 상황에서는 이런 안료가 튄다'고 적어두시면 AI가 이를 독립적으로 뇌 구조에 영구 각인합니다.")
-   
+    
     col_chat, col_btn = st.columns([4, 1])
     with col_chat:
         user_feedback = st.text_input("학습시킬 노하우를 입력하세요.", placeholder="예: 백색(TiO2) 200g 이상 깔린 베이스에 RED를 0.05g 넣으면 a*가 0.2 오르더라", key="user_feedback_input")
     with col_btn:
         st.write("")
         learn_btn = st.button("🎓 실무 룰 AI에 각인", type="secondary", use_container_width=True)
+
     if learn_btn:
         if not active_api_key:
             st.error("API Key를 확인해주세요.")
@@ -749,7 +792,7 @@ with st.container(border=True):
                 # 텍스트 파일에 영구 기록 (위쪽 UI 데이터 가져오지 않음 - 100% 독립)
                 with open(MEMORY_FILE, "a", encoding="utf-8") as f:
                     f.write(f"- 실무자 관측 룰: {user_feedback.strip()}\n")
-               
+                
                 # AI 대답 유도
                 model = get_dynamic_ai_model(active_api_key)
                 reply_prompt = f"너는 조색 AI다. 실무자가 다음 현장 노하우를 주입했다:\n[노하우] {user_feedback}\n이 특정 상황(Context)에서의 안료 상호작용을 완벽히 이해했고, 앞으로 비슷한 상황을 맞닥뜨리면 이 룰을 1순위로 반영하겠다는 대답을 '💡 AI 학습 완료:' 로 시작하는 2~3줄 문장으로 해라."
@@ -758,12 +801,14 @@ with st.container(border=True):
                 st.rerun()
             except Exception as e:
                 st.error(f"오류가 발생했습니다: {e}")
-               
+                
     if "last_learned_msg" in st.session_state:
         st.success("✅ 입력하신 실무 노하우가 영구 메모리에 완벽히 각인되었습니다!")
         st.info(st.session_state.last_learned_msg)
+
     # 현재 각인된 메모리 열람
     current_memory = get_ai_memory_rules()
     if current_memory:
         with st.expander("📜 현재 AI가 기억 중인 현장 실무 룰 목록 열람", expanded=False):
             st.text(current_memory)
+
